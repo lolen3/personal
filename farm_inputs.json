@@ -1,0 +1,78 @@
+{
+    "Maize": {
+        "seeds": [
+            {"name": "H614D Hybrid", "price": 450, "quantity": "2kg", "description": "High yielding variety suitable for medium altitude areas"},
+            {"name": "DK8031", "price": 520, "quantity": "2kg", "description": "Drought tolerant variety with excellent standability"}
+        ],
+        "fertilizers": [
+            {"name": "DAP", "price": 3800, "quantity": "50kg", "description": "18:46:0 - For planting"},
+            {"name": "CAN", "price": 2900, "quantity": "50kg", "description": "26:0:0 - For top dressing"}
+        ],
+        "pesticides": [
+            {"name": "Striker", "price": 850, "quantity": "500ml", "description": "Controls fall armyworm and stalk borers"},
+            {"name": "Duduthrin", "price": 450, "quantity": "50ml", "description": "Broad-spectrum insecticide for field pests"}
+        ],
+        "equipment": [
+            {"name": "Jembe (Hoe)", "price": 450, "quantity": "1 piece", "description": "Traditional farming tool for digging"},
+            {"name": "Knapsack Sprayer", "price": 2500, "quantity": "16L", "description": "For applying pesticides and foliar feeds"}
+        ],
+        "planting_guide": "Plant at 75cm between rows and 25cm between plants. Apply 1 teaspoon of DAP per hole at planting. Top dress with CAN when plants are knee-high."
+    },
+    "Beans": {
+        "seeds": [
+            {"name": "KK8 Rose Coco", "price": 650, "quantity": "2kg", "description": "Early maturing variety with good market demand"},
+            {"name": "Nyota", "price": 700, "quantity": "2kg", "description": "Disease resistant variety suitable for many regions"}
+        ],
+        "fertilizers": [
+            {"name": "TSP", "price": 3600, "quantity": "50kg", "description": "0:45:0 - For planting"},
+            {"name": "NPK 17:17:17", "price": 3500,  "quantity": "50kg", "description": "Balanced fertilizer for growing"}
+        ],
+        "pesticides": [
+            {"name": "Thunder", "price": 1200, "quantity": "500ml", "description": "Controls aphids and bean flies"},
+            {"name": "Ridomil", "price": 950, "quantity": "500g", "description": "Fungicide for rust and anthracnose"}
+        ],
+        "equipment": [
+            {"name": "Jembe (Hoe)", "price": 450, "quantity": "1 piece", "description": "Traditional farming tool for digging"},
+            {"name": "Panga (Machete)", "price": 350, "quantity": "1 piece", "description": "For clearing land before planting"}
+        ],
+        "planting_guide": "Plant at 45cm between rows and 15cm between plants. Apply 1/2 teaspoon of TSP per hole at planting. Keep field weed-free."
+    },
+    "Rice": {
+        "seeds": [
+            {"name": "Basmati 370", "price": 850, "quantity": "2kg", "description": "Aromatic long-grain variety with premium market price"},
+            {"name": "IR2793", "price": 750, "quantity": "2kg", "description": "High-yielding variety suitable for irrigation"}
+        ],
+        "fertilizers": [
+            {"name": "DAP", "price": 3800, "quantity": "50kg", "description": "18:46:0 - For planting"},
+            {"name": "Urea", "price": 3200, "quantity": "50kg", "description": "46:0:0 - For vegetative growth"}
+        ],
+        "pesticides": [
+            {"name": "Oshin", "price": 950, "quantity": "100g", "description": "Controls rice stem borers"},
+            {"name": "Amistar Top", "price": 2800, "quantity": "250ml", "description": "Fungicide for blast and sheath blight"}
+        ],
+        "equipment": [
+            {"name": "Water Pump", "price": 15000, "quantity": "1 piece", "description": "For irrigation management"},
+            {"name": "Sickle", "price": 300, "quantity": "1 piece", "description": "For harvesting rice"}
+        ],
+        "planting_guide": "Transplant seedlings at 20cm x 20cm spacing. Maintain water level at 5cm during vegetative stage. Apply fertilizer in split doses."
+    },
+    "Wheat": {
+        "seeds": [
+            {"name": "Kenya Kwale", "price": 700, "quantity": "2kg", "description": "High-yielding variety with resistance to rust"},
+            {"name": "Eagle 10", "price": 750, "quantity": "2kg", "description": "Drought tolerant variety with early maturity"}
+        ],
+        "fertilizers": [
+            {"name": "DAP", "price": 3800, "quantity": "50kg", "description": "18:46:0 - For planting"},
+            {"name": "Urea", "price": 3200, "quantity": "50kg", "description": "46:0:0 - For top dressing"}
+        ],
+        "pesticides": [
+            {"name": "Tilt", "price": 1800, "quantity": "250ml", "description": "Fungicide for rust and septoria"},
+            {"name": "Decis", "price": 850, "quantity": "500ml", "description": "Insecticide for aphids and thrips"}
+        ],
+        "equipment": [
+            {"name": "Seed Drill", "price": 35000, "quantity": "1 piece", "description": "For precision planting"},
+            {"name": "Boom Sprayer", "price": 8500, "quantity": "1 piece", "description": "For efficient pesticide application"}
+        ],
+        "planting_guide": "Plant in rows 20cm apart with seeding rate of 125kg/ha. Apply DAP at planting and top dress with Urea at tillering stage."
+    }
+}

@@ -1,0 +1,3944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Smart Seed: Agricultural AI for Kenya</title>
+  <!-- Tailwind CSS 2.2.19 via jsDelivr -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Font Awesome 6.5.2 for icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css">
+  <!-- Google Fonts (Roboto) -->
+  <link href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@3.3.1/index.css" rel="stylesheet">
+  <!-- Chart.js for future data viz, loaded if needed -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    body { font-family: 'Roboto', Arial, sans-serif; }
+    .form-label { font-weight: 600; }
+    /* For focus outlines in forms */
+    .form-control:focus { outline: 2px solid #059669; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;}
+    /* To ensure no scrollbars on pdf, ensure grids and flex items wrap */
+    @media print {
+      html,body {
+        height: auto !important;
+        overflow: visible !important;
+      }
+      .noprint {display:none;}
+    }
+  </style>
+</head>
+<body class="bg-green-50 text-gray-900">
+  <div class="max-w-5xl mx-auto p-6 bg-white shadow-lg rounded-lg">
+    <!-- App Header -->
+    <div class="flex flex-col md:flex-row items-center mb-6 border-b pb-4">
+      <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f331.png" alt="Seed Logo" class="w-16 h-16 md:mr-4 mb-2 md:mb-0">
+      <div>
+        <h1 class="text-4xl font-extrabold text-green-700 tracking-wide">Smart Seed</h1>
+        <span class="text-lg text-green-900 font-semibold">Empowering Kenyan Farmers with AI-driven Decisions</span>
+      </div>
+    </div>
+
+    <!-- Login & Registration Section (Modal Trigger) -->
+    <div class="bg-green-100 border-l-4 border-green-700 p-4 rounded mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
+      <div class="flex-1">
+        <h2 class="text-xl text-green-900 font-bold mb-2 flex items-center"><span class="fas fa-user-circle mr-2"></span>Login/Registration</h2>
+        <p class="text-sm text-gray-700">Register or log in to manage your farm settings, save crop recommendations, and access the vendor marketplace.</p>
+      </div>
+      <div class="flex gap-4 flex-shrink-0">
+        <button onclick="openAuth('login');" class="bg-green-700 text-white rounded-lg px-5 py-2 font-semibold hover:bg-green-800 transition flex items-center">
+          <span class="fas fa-sign-in-alt mr-1"></span>Login
+        </button>
+        <button onclick="openAuth('register');" class="bg-white border border-green-700 text-green-700 rounded-lg px-5 py-2 font-semibold hover:bg-green-700 hover:text-white transition flex items-center">
+          <span class="fas fa-user-plus mr-1"></span>Register
+        </button>
+      </div>
+    </div>
+<!-- Auth Modal -->
+<div id="authModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+      <h2 id="authTitle" class="text-xl font-bold text-green-800 mb-4">Login</h2>
+  
+      <form id="authForm">
+        <label class="block mb-2 text-sm font-semibold">Choose Method</label>
+        <select id="authMethod" class="w-full border px-3 py-2 rounded mb-3">
+          <option value="email">Email</option>
+          <option value="phone">Phone</option>
+        </select>
+  
+        <input type="text" id="identifier" placeholder="Email or Phone" class="w-full border px-3 py-2 rounded mb-3" required />
+        <input type="password" id="password" placeholder="Password" class="w-full border px-3 py-2 rounded mb-3" required />
+  
+        <div id="otpSection" class="hidden">
+          <input type="text" id="otp" placeholder="Enter OTP" class="w-full border px-3 py-2 rounded mb-3" />
+        </div>
+  
+        <div class="flex gap-3">
+          <button type="button" onclick="sendOtp()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded">Send OTP</button>
+          <button type="submit" class="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded">Submit</button>
+        </div>
+      </form>
+  
+      <button onclick="closeAuth()" class="mt-4 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+    </div>
+  </div>
+  
+    <section id="location" class="mb-8">
+        <h2 class="text-xl font-bold text-green-900 mb-2 flex items-center">
+          <span class="fas fa-map-marker-alt mr-2 text-xl"></span>Where is your farm?
+        </h2>
+        <p class="text-sm text-gray-700 mb-2">
+          Select county, or 
+          <span class="fas fa-crosshairs-alt text-lg"></span>
+          <span class="text-green-700 font-bold cursor-pointer underline" onclick="getLocation()">scan location</span>
+          to use your current GPS location.
+        </p>
+        <section>
+          <form id="locationForm" onsubmit="return submitLocationForm(event)">
+            <div class="mb-3 grid md:grid-cols-3 gap-3">
+              <div>
+                <label for="county" class="form-label">County</label>
+                <select required id="county" name="county" class="form-control w-full border-green-400 border px-4 py-2 rounded-md focus:ring-2 focus:ring-green-700 mb-1" onchange="updateSubcounties()">
+                  <option value="">--Select County--</option>
+                </select>
+              </div>
+              <div>
+                <label for="subcounty" class="form-label">Subcounty</label>
+                <select required id="subcounty" name="subcounty" class="form-control w-full border-green-400 border px-4 py-2 rounded-md mb-1" onchange="updateConstituencies()">
+                  <option value="">--Select Subcounty--</option>
+                </select>
+              </div>
+              <div>
+                <label for="constituency" class="form-label">Constituency</label>
+                <select required id="constituency" name="constituency" class="form-control w-full border-green-400 border px-4 py-2 rounded-md mb-1">
+                  <option value="">--Select Constituency--</option>
+                </select>
+              </div>
+            </div>
+          
+              <div class="mb-3 flex flex-col md:flex-row items-center gap-3">
+                <div class="flex-1">
+                  <label for="season" class="form-label">Season</label>
+                  <select required id="season" name="season" class="form-control w-full border-green-400 border px-4 py-2 rounded-md mb-1">
+                    <option value="">--Select Season--</option>
+                    <option value="Long Rains">Long Rains (Mar–May)</option>
+                    <option value="Cool Dry">Cool Dry (Jun–Aug)</option>
+                    <option value="Short Rains">Short Rains (Oct–Dec)</option>
+                    <option value="Hot Dry">Hot Dry (Jan–Feb)</option>
+                  </select>
+                </div>
+          
+                <div class="flex-1">
+                  <label for="soilcolor" class="form-label">Soil Color</label>
+                  <select required id="soilcolor" name="soilcolor" class="form-control w-full border-green-400 border px-4 py-2 rounded-md mb-1">
+                    <option value="">--Select Soil Color--</option>
+                    <option value="Yellowish brown">Yellowish brown</option>
+                    <option value="Brown">Brown</option>
+                    <option value="Red">Red</option>
+                    <option value="Black">Black</option>
+                    <option value="Dark brown">Dark brown</option>
+                  </select>
+                </div>
+              </div>
+          
+              <button type="submit" class="bg-green-700 text-white rounded-lg px-5 py-2 font-semibold hover:bg-green-800 transition">Get Recommendations</button>
+            </form>
+          
+            <div id="locationError" class="text-red-600 font-semibold mt-2"></div>
+          </section>
+          
+    <!-- Soil Analysis Auto Section -->
+    <section id="soil-analysis" class="mb-8">
+      <h2 class="text-xl font-bold text-green-900 mb-2 flex items-center"><span class="fas fa-flask mr-2"></span>Soil Analysis (Auto-filled)</h2>
+      <p class="text-sm text-gray-700 mb-3">Soil properties for your farm are auto-fetched from local datasets after you select a location.</p>
+      <form id="soilForm">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="form-label">Soil pH</label>
+            <input type="number" step="0.01" readonly id="soil_ph" class="form-control border px-4 py-2 rounded w-full bg-gray-100" placeholder="e.g. 6.0">
+          </div>
+          <div>
+            <label class="form-label">Potassium (K)</label>
+            <input type="number" readonly id="soil_k" class="form-control border px-4 py-2 rounded w-full bg-gray-100" placeholder="e.g. 120">
+          </div>
+          <div>
+            <label class="form-label">Phosphorus (P)</label>
+            <input type="number" readonly id="soil_p" class="form-control border px-4 py-2 rounded w-full bg-gray-100" placeholder="e.g. 30">
+          </div>
+          <div>
+            <label class="form-label">Nitrogen (N)</label>
+            <input type="number" readonly id="soil_n" class="form-control border px-4 py-2 rounded w-full bg-gray-100" placeholder="e.g. 1.5">
+          </div>
+          <div>
+            <label class="form-label">Zinc (Zn)</label>
+            <input type="number" readonly id="soil_zn" class="form-control border px-4 py-2 rounded w-full bg-gray-100">
+          </div>
+          <div>
+            <label class="form-label">Sulphur (S)</label>
+            <input type="number" readonly id="soil_s" class="form-control border px-4 py-2 rounded w-full bg-gray-100">
+          </div>
+          <div>
+            <label class="form-label">Soil Moisture %</label>
+            <input type="number" readonly id="soil_moisture" class="form-control border px-4 py-2 rounded w-full bg-gray-100" placeholder="e.g. 15%">
+          </div>
+          <div>
+            <label class="form-label">Soil Texture</label>
+            <input type="text" readonly id="soil_texture" class="form-control border px-4 py-2 rounded w-full bg-gray-100">
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- Crop Recommendation Results (Model Output) -->
+    <section id="recommendation" class="mb-10">
+      <h2 class="text-2xl font-bold text-green-900 mb-4 text-center">Recommended Crops for You</h2>
+      <div id="cropResults" class="grid grid-cols-1 md:grid-cols-3 gap-5"></div>
+      <div class="text-center mt-4">
+        <p class="text-md text-gray-600">
+          <span class="fas fa-info-circle text-lg text-green-600"></span>
+          Click a crop for its detailed properties and region suitability.
+        </p>
+      </div>
+    </section>
+
+    <!-- Dynamic Crop Details Modal -->
+    <div id="cropDetailsModal" class="hidden fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 z-50 flex items-center justify-center">
+      <div class="bg-white rounded-lg max-w-lg w-full p-6 shadow-lg relative overflow-auto" style="max-height:90vh;">
+        <button onclick="closeCropDetails()" class="absolute top-2 right-2 text-gray-500 hover:text-green-700 text-lg noprint"><span class="fas fa-times"></span></button>
+        <div id="cropDetailsContent"></div>
+      </div>
+    </div>
+
+    <!-- Farm Input Suggestions -->
+    <section id="inputs" class="mb-8">
+      <h2 class="text-2xl font-bold text-green-900 mb-4">
+        <span class="fas fa-box-open text-2xl mr-2"></span>Farm Inputs &amp; Where To Find Them
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="border-l-4 border-green-600 p-3 rounded bg-green-50">
+          <div class="text-lg font-semibold text-green-800 mb-2">Maize Inputs</div>
+          <ul class="list-inside text-sm">
+            <li><span class="fas fa-seedling text-green-600"></span> Certified Seed: Kenya Seed, Pioneer</li>
+            <li><span class="fas fa-flask text-green-600"></span> Fertilizer: DAP, Urea, NPK</li>
+            <li><span class="fas fa-leaf text-green-600"></span> Herbicides: 2,4D, Lumax Gold</li>
+          </ul>
+        </div>
+        <div class="border-l-4 border-yellow-500 p-3 rounded bg-yellow-50">
+          <div class="text-lg font-semibold text-yellow-800 mb-2">Beans Inputs</div>
+          <ul class="list-inside text-sm">
+            <li><span class="fas fa-seedling text-yellow-700"></span> Clean seed: Rosecoco, Mwitemania</li>
+            <li><span class="fas fa-vial text-yellow-700"></span> Rhizobium: NoduMax, Biofix</li>
+            <li><span class="fas fa-flask text-yellow-700"></span> NPK fertilizer or manure</li>
+          </ul>
+        </div>
+        <div class="border-l-4 border-orange-500 p-3 rounded bg-orange-50">
+          <div class="text-lg font-semibold text-orange-700 mb-2">Potato Inputs</div>
+          <ul class="list-inside text-sm">
+            <li><span class="fas fa-seedling text-orange-700"></span> Clean seed tubers: KEPHIS certified</li>
+            <li><span class="fas fa-flask text-orange-700"></span> Fungicides: Ridomil Gold, Dithane M-45</li>
+            <li><span class="fas fa-leaf text-orange-700"></span> Blended fertilizer NPK</li>
+          </ul>
+        </div>
+      </div>
+      <p class="mt-3 text-gray-600 text-sm">Find these inputs at agro-dealers near you, or buy from trusted vendors below. <span class="font-semibold text-green-700">Always look for KEPHIS certification on seeds!</span></p>
+    </section>
+
+    <!-- Trusted Farm Vendors & Marketplace -->
+    <section id="vendors" class="mb-8">
+      <h2 class="text-2xl font-bold text-green-900 mb-4"><span class="fas fa-store text-2xl mr-2"></span>Trusted Farm Vendors &amp; Suppliers</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white border border-green-100 rounded shadow p-4 flex">
+          <img src="https://www.elgonkenya.com/images/logo.jpg" alt="Elgon Kenya Logo" class="h-12 w-12 mr-4">
+          <div>
+            <div class="font-bold text-green-800 mb-1">Elgon Kenya Ltd.</div>
+            <ul class="text-gray-700 text-sm mb-1">
+              <li>Wide variety of seeds, fertilizers, agrochemicals, irrigation supplies</li>
+            </ul>
+            <a href="https://www.elgonkenya.com/" class="text-green-800 underline text-sm" target="_blank">www.elgonkenya.com</a>
+          </div>
+        </div>
+        <div class="bg-white border border-green-100 rounded shadow p-4 flex">
+          <img src="https://shambaza.com/wp-content/uploads/2022/02/cropped-shambaza-1.png" alt="Shambaza Logo" class="h-12 w-12 mr-4">
+          <div>
+            <div class="font-bold text-green-700 mb-1">Shambaza.com (Online Agrovets)</div>
+            <ul class="text-gray-700 text-sm mb-1">
+              <li>First online farm input directory in Kenya, links to input suppliers.</li>
+            </ul>
+            <a href="https://shambaza.com/" class="text-green-800 underline text-sm" target="_blank">shambaza.com</a>
+          </div>
+        </div>
+      </div>
+      <div class="my-3">
+        <h3 class="font-bold text-green-800 mb-2 mt-4 text-base">Top Input Distributors</h3>
+        <ul class="list-disc ml-6 text-sm">
+          <li>EABCL - <a href="https://www.eabcl.co.ke/" class="underline text-green-600" target="_blank">eabcl.co.ke</a></li>
+          <li>Farm Shop (social franchise model) - various locations</li>
+          <li>Tupande by One Acre Fund - <a href="https://oneacrefund.org/what-we-do/areas-focus/farm-supplies" class="underline text-green-600" target="_blank">oneacrefund.org</a></li>
+          <li>Apollo Agriculture (credit + inputs) - <a href="https://apolloagriculture.com/" class="underline text-green-600" target="_blank">apolloagriculture.com</a></li>
+          <li>More at: <a href="https://agroduka.ke/index.php?dispatch=companies.catalog" class="underline text-green-600" target="_blank">AgroDuka Vendor Directory</a></li>
+        </ul>
+      </div>
+      <h3 class="font-bold text-green-800 mt-6 text-base">Vendor Marketplace</h3>
+      <div class="border rounded bg-green-50 p-4">
+        <form id="vendorFilterForm" class="flex flex-col md:flex-row justify-start items-center gap-4 noprint">
+          <select id="vendorProduct" class="form-control border px-2 py-1 rounded">
+            <option value="">Product Type</option>
+            <option value="Seeds">Seeds</option>
+            <option value="Fertilizers">Fertilizers</option>
+            <option value="Pesticides">Pesticides</option>
+            <option value="Equipment">Equipment</option>
+          </select>
+          <select id="vendorCounty" class="form-control border px-2 py-1 rounded">
+            <option value="">County</option>
+          </select>
+          <button type="button" class="bg-green-700 text-white px-4 py-1 rounded" onclick="filterVendors()">Search</button>
+        </form>
+        <div id="vendorMarketplace" class="mt-4"></div>
+      </div>
+    </section>
+
+    <!-- Visual Guide & Inclusion -->
+    <section class="mb-10">
+      <h2 class="text-2xl font-bold text-green-900 mb-4"><span class="fas fa-eye text-2xl mr-2"></span>Visual Guide &amp; Inclusion</h2>
+      <div class="md:flex gap-8 items-start">
+        <div class="flex-1 mb-3">
+          <ul class="list-disc ml-6 text-gray-700 mb-2">
+            <li><span class="fas fa-image text-green-700"></span> Each major step features icon cues or example images for users preferring visuals over text.</li>
+            <li><span class="fas fa-volume-up text-green-700"></span> App supports narration/voice notes (see app settings on full implementation).</li>
+            <li><span class="fas fa-language text-green-700"></span> English/Swahili language supported.</li>
+            <li><span class="fas fa-users text-green-700"></span> User-help forum/community and local extension contacts (coming soon).</li>
+          </ul>
+        </div>
+        <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f33e.png" alt="Farming Icon" class="w-32 mx-auto md:mx-0">
+      </div>
+    </section>
+
+    <footer class="mt-10 pt-6 border-t text-center text-sm text-gray-600">
+      <div class="flex items-center justify-center gap-2 mb-2">
+        <span class="fas fa-leaf text-green-700 text-xl"></span>
+        Smart Seed &copy; 2025 | Empowering Kenya's Farmers with AI | <a href="#vendors" class="text-green-800 underline">Vendors</a> | <a href="#inputs" class="text-green-800 underline">Inputs</a>
+      </div>
+      <div>
+        <span class="fab fa-github text-lg"></span>
+        <a href="https://github.com/" class="underline text-green-800" target="_blank">Project Source</a>
+      </div>
+    </footer>
+  </div>
+
+  <!-- AUTH MODAL -->
+  <div id="authModal" class="fixed z-50 hidden top-0 left-0 w-full h-full bg-black bg-opacity-50 items-center justify-center">
+    <div class="bg-white p-6 rounded-lg max-w-md w-full mx-auto relative overflow-auto" style="max-height:90vh;">
+      <button onclick="closeAuth()" class="absolute top-2 right-2 text-gray-500 hover:text-green-700 text-lg noprint">
+        <span class="fas fa-times"></span>
+      </button>
+      <div id="authContent"></div>
+    </div>
+  </div>
+
+  <script>
+    // Kenyan Administrative Data
+    const counties = {
+        "Mombasa": {
+          "Changamwe": [
+            "Port Reitz",
+            "Kipevu",
+            "Airport",
+            "Changamwe",
+            "Chaani"
+          ],
+          "Jomvu": [
+            "Jomvu Kuu",
+            "Miritini",
+            "Mikindani"
+          ],
+          "Kisauni": [
+            "Mjambere",
+            "Junda",
+            "Bamburi",
+            "Mwakirunge",
+            "Mtopanga",
+            "Magogoni",
+            "Shanzu"
+          ],
+          "Nyali": [
+            "Frere Town",
+            "Ziwa La Ng'Ombe",
+            "Mkomani",
+            "Kongowea",
+            "Kadzandani"
+          ],
+          "Likoni": [
+            "Mtongwe",
+            "Shika Adabu",
+            "Bofu",
+            "Likoni",
+            "Timbwani"
+          ],
+          "Mvita": [
+            "Mji Wa Kale/Makadara",
+            "Tudor",
+            "Tononoka",
+            "Shimanzi/Ganjoni",
+            "Majengo"
+          ]
+        },
+        "Kwale": {
+          "Msambweni": [
+            "Gombato Bongwe",
+            "Ukunda",
+            "Kinondo",
+            "Ramisi"
+          ],
+          "Lungalunga": [
+            "Pongwe/Kikoneni",
+            "Dzombo",
+            "Mwereni",
+            "Vanga"
+          ],
+          "Matuga": [
+            "Tsima Golini",
+            "Waa",
+            "Tiwi",
+            "Kubo South",
+            "Mkongani"
+          ],
+          "Kinango": [
+            "Ndavaya",
+            "Puma",
+            "Kinango",
+            "Mackinnon Road",
+            "Chengoni/Samburu",
+            "Mwavumbo",
+            "Kasemeni"
+          ]
+        },
+        "Kilifi": {
+          "Kilifi North": [
+            "Tezo",
+            "Sokoni",
+            "Kibarani",
+            "Dabaso",
+            "Matsangoni",
+            "Watamu",
+            "Mnarani"
+          ],
+          "Kilifi South": [
+            "Junju",
+            "Mwarakaya",
+            "Shimo La Tewa",
+            "Chasimba",
+            "Mtepeni"
+          ],
+          "Kaloleni": [
+            "Mariakani",
+            "Kayafungo",
+            "Kaloleni",
+            "Mwanamwinga"
+          ],
+          "Rabai": [
+            "Mwawesa",
+            "Ruruma",
+            "Kambe/Ribe",
+            "Rabai/Kisurutini"
+          ],
+          "Ganze": [
+            "Ganze",
+            "Bamba",
+            "Jaribuni",
+            "Sokoke"
+          ],
+          "Malindi": [
+            "Jilore",
+            "Kakuyuni",
+            "Ganda",
+            "Malindi Town",
+            "Shella"
+          ],
+          "Magarini": [
+            "Marafa",
+            "Magarini",
+            "Gongoni",
+            "Adu",
+            "Garashi",
+            "Sabaki"
+          ]
+        },
+        "Tana River": {
+          "Garsen": [
+            "Kipini East",
+            "Garsen South",
+            "Kipini West",
+            "Garsen Central",
+            "Garsen West",
+            "Garsen North"
+          ],
+          "Galole": [
+            "Kinakomba",
+            "Mikinduni",
+            "Chewani",
+            "Wayu"
+          ],
+          "Bura": [
+            "Chewele",
+            "Hirimani",
+            "Bangale",
+            "Sala",
+            "Madogo"
+          ]
+        },
+        "Lamu": {
+          "Lamu East": [
+            "Faza",
+            "Kiunga",
+            "Basuba"
+          ],
+          "Lamu West": [
+            "Shella",
+            "Mkomani",
+            "Hindi",
+            "Mkunumbi",
+            "Hongwe",
+            "Witu",
+            "Bahari"
+          ]
+        },
+        "Taita Taveta": {
+          "Taveta": [
+            "Chala",
+            "Mahoo",
+            "Bomani",
+            "Mboghoni",
+            "Mata"
+          ],
+          "Wundanyi": [
+            "Wundanyi/Mbale",
+            "Werugha",
+            "Wumingu/Kishushe",
+            "Mwanda/Mgange"
+          ],
+          "Mwatate": [
+            "Rong'E",
+            "Mwatate",
+            "Bura",
+            "Chawia",
+            "Wusi/Kishamba"
+          ],
+          "Voi": [
+            "Mbololo",
+            "Sagalla",
+            "Kaloleni",
+            "Marungu",
+            "Kasigau",
+            "Ngolia"
+          ]
+        },
+        "Garissa": {
+          "Garissa Township": [
+            "Waberi",
+            "Galbet",
+            "Township",
+            "Iftin"
+          ],
+          "Balambala": [
+            "Balambala",
+            "Danyere",
+            "Jara Jara",
+            "Saka",
+            "Sankuri"
+          ],
+          "Lagdera": [
+            "Modogashe",
+            "Benane",
+            "Goreale",
+            "Maalimin",
+            "Sabena",
+            "Baraki"
+          ],
+          "Dadaab": [
+            "Dertu",
+            "Dadaab",
+            "Labasigale",
+            "Damajale",
+            "Liboi",
+            "Abakaile"
+          ],
+          "Fafi": [
+            "Bura",
+            "Dekaharia",
+            "Jarajila",
+            "Fafi",
+            "Nanighi"
+          ],
+          "Ijara": [
+            "Hulugho",
+            "Sangailu",
+            "Ijara",
+            "Masalani"
+          ]
+        },
+        "Wajir": {
+          "Wajir North": [
+            "Gurar",
+            "Bute",
+            "Korondile",
+            "Malkagufu",
+            "Batalu",
+            "Danaba",
+            "Godoma"
+          ],
+          "Wajir East": [
+            "Wagberi",
+            "Township",
+            "Barwago",
+            "Khorof/Harar"
+          ],
+          "Tarbaj": [
+            "Elben",
+            "Sarman",
+            "Tarbaj",
+            "Wargadud"
+          ],
+          "Wajir West": [
+            "Arbajahan",
+            "Hadado/Athibohol",
+            "Adamasajide",
+            "Ganyure/Wagalla"
+          ],
+          "Eldas": [
+            "Eldas",
+            "Della",
+            "Lakoley South/Basir",
+            "Elnur/Tula Tula"
+          ],
+          "Wajir South": [
+            "Benane",
+            "Burder",
+            "Dadaja Bulla",
+            "Habasswein",
+            "Lagboghol South",
+            "Ibrahim Ure",
+            "Diif"
+          ]
+        },
+        "Mandera": {
+          "Mandera West": [
+            "Takaba South",
+            "Takaba",
+            "Lagsure",
+            "Dandu",
+            "Gither"
+          ],
+          "Banissa": [
+            "Banissa",
+            "Derkhale",
+            "Guba",
+            "Malkamari",
+            "Kiliwehiri"
+          ],
+          "Mandera North": [
+            "Ashabito",
+            "Guticha",
+            "Morothile",
+            "Rhamu",
+            "Rhamu-Dimtu"
+          ],
+          "Mandera South": [
+            "Wargadud",
+            "Kutulo",
+            "Elwak South",
+            "Elwak North",
+            "Shimbir Fatuma"
+          ],
+          "Mandera East": [
+            "Arabia",
+            "Township",
+            "Neboi",
+            "Khalalio",
+            "Libehia"
+          ],
+          "Lafey": [
+            "Sala",
+            "Fino",
+            "Lafey",
+            "Waranqara",
+            "Alango Gof"
+          ]
+        },
+        "Marsabit": {
+          "Moyale": [
+            "Butiye",
+            "Sololo",
+            "Heillu/Manyatta",
+            "Golbo",
+            "Moyale Township",
+            "Uran",
+            "Obbu"
+          ],
+          "North Horr": [
+            "Dukana",
+            "Maikona",
+            "Turbi",
+            "North Horr",
+            "Illeret"
+          ],
+          "Saku": [
+            "Sagante/Jaldessa",
+            "Karare",
+            "Marsabit Central"
+          ],
+          "Laisamis": [
+            "Loiyangalani",
+            "Kargi/South Horr",
+            "Korr/Ngurunit",
+            "Logo Logo",
+            "Laisamis"
+          ]
+        },
+        "Isiolo": {
+          "Isiolo North": [
+            "Wabera",
+            "Bulla Pesa",
+            "Chari",
+            "Cherab",
+            "Ngare Mara",
+            "Burat",
+            "Oldo/Nyiro"
+          ],
+          "Isiolo South": [
+            "Garbatulla",
+            "Kinna",
+            "Sericho"
+          ]
+        },
+        "Meru": {
+          "Igembe South": [
+            "Maua",
+            "Kiegoi/Antubochiu",
+            "Athiru Gaiti",
+            "Akachiu",
+            "Kanuni"
+          ],
+          "Igembe Central": [
+            "Akirang'Ondu",
+            "Athiru Ruujine",
+            "Igembe East",
+            "Njia",
+            "Kangeta"
+          ],
+          "Igembe North": [
+            "Antuambui",
+            "Ntunene",
+            "Antubetwe Kiongo",
+            "Naathu",
+            "Amwathi"
+          ],
+          "Tigania West": [
+            "Athwana",
+            "Akithii",
+            "Kianjai",
+            "Nkomo",
+            "Mbeu"
+          ],
+          "Tigania East": [
+            "Thangatha",
+            "Mikinduri",
+            "Kiguchwa",
+            "Muthara",
+            "Karama"
+          ],
+          "North Imenti": [
+            "Municipality",
+            "Ntima East",
+            "Ntima West",
+            "Nyaki West",
+            "Nyaki East"
+          ],
+          "Buuri": [
+            "Timau",
+            "Kisima",
+            "Kiirua/Naari",
+            "Ruiri/Rwarera",
+            "Kibirichia"
+          ],
+          "Central Imenti": [
+            "Mwang'Anthia",
+            "Abothuguchi Central",
+            "Abothuguchi West",
+            "Kiagu"
+          ],
+          "South Imenti": [
+            "Mitunguu",
+            "Igoji East",
+            "Igoji West",
+            "Abogeta East",
+            "Abogeta West",
+            "Nkuene"
+          ]
+        },
+        "Tharaka - Nithi": {
+          "Maara": [
+            "Mitheru",
+            "Muthambi",
+            "Mwimbi",
+            "Ganga",
+            "Chogoria"
+          ],
+          "Chuka/Igambang'ombe": [
+            "Mariani",
+            "Karingani",
+            "Magumoni",
+            "Mugwe",
+            "Igambang'ombe"
+          ],
+          "Tharaka": [
+            "Gatunga",
+            "Mukothima",
+            "Nkondi",
+            "Chiakariga",
+            "Marimanti"
+          ]
+        },
+        "Embu": {
+          "Manyatta": [
+            "Ruguru/Ngandori",
+            "Kithimu",
+            "Nginda",
+            "Mbeti North",
+            "Kirimari",
+            "Gaturi South"
+          ],
+          "Runyenjes": [
+            "Gaturi North",
+            "Kagaari South",
+            "Central Ward",
+            "Kagaari North",
+            "Kyeni North",
+            "Kyeni South"
+          ],
+          "Mbeere South": [
+            "Mwea",
+            "Makima",
+            "Mbeti South",
+            "Mavuria",
+            "Kiambere"
+          ],
+          "Mbeere North": [
+            "Nthawa",
+            "Muminji",
+            "Evurore"
+          ]
+        },
+        "Kitui": {
+          "Mwingi North": [
+            "Ngomeni",
+            "Kyuso",
+            "Mumoni",
+            "Tseikuru",
+            "Tharaka"
+          ],
+          "Mwingi West": [
+            "Kyome/Thaana",
+            "Nguutani",
+            "Migwani",
+            "Kiomo/Kyethani"
+          ],
+          "Mwingi Central": [
+            "Central",
+            "Kivou",
+            "Nguni",
+            "Nuu",
+            "Mui",
+            "Waita"
+          ],
+          "Kitui West": [
+            "Mutonguni",
+            "Kauwi",
+            "Matinyani",
+            "Kwa Mutonga/Kithumula"
+          ],
+          "Kitui Rural": [
+            "Kisasi",
+            "Mbitini",
+            "Kavonza/Yatta",
+            "Kanyangi"
+          ],
+          "Kitui Central": [
+            "Miambani",
+            "Township",
+            "Kyangwithya West",
+            "Mulango",
+            "Kyangwithya East"
+          ],
+          "Kitui East": [
+            "Zombe/Mwitika",
+            "Nzambani",
+            "Chuluni",
+            "Voo/Kyamatu",
+            "Endau/Malalani",
+            "Mutito/Kaliku"
+          ],
+          "Kitui South": [
+            "Ikanga/Kyatune",
+            "Mutomo",
+            "Mutha",
+            "Ikutha",
+            "Kanziko",
+            "Athi"
+          ]
+        },
+        "Machakos": {
+          "Masinga": [
+            "Kivaa",
+            "Masinga Central",
+            "Ekalakala",
+            "Muthesya",
+            "Ndithini"
+          ],
+          "Yatta": [
+            "Ndalani",
+            "Matuu",
+            "Kithimani",
+            "Ikombe",
+            "Katangi"
+          ],
+          "Kangundo": [
+            "Kangundo North",
+            "Kangundo Central",
+            "Kangundo East",
+            "Kangundo West"
+          ],
+          "Matungulu": [
+            "Tala",
+            "Matungulu North",
+            "Matungulu East",
+            "Matungulu West",
+            "Kyeleni"
+          ],
+          "Kathiani": [
+            "Mitaboni",
+            "Kathiani Central",
+            "Upper Kaewa/Iveti",
+            "Lower Kaewa/Kaani"
+          ],
+          "Mavoko": [
+            "Athi River",
+            "Kinanie",
+            "Muthwani",
+            "Syokimau/Mulolongo"
+          ],
+          "Machakos Town": [
+            "Kalama",
+            "Mua",
+            "Mutituni",
+            "Machakos Central",
+            "Mumbuni North",
+            "Muvuti/Kiima-Kimwe",
+            "Kola"
+          ],
+          "Mwala": [
+            "Mbiuni",
+            "Makutano/Mwala",
+            "Masii",
+            "Muthetheni",
+            "Wamunyu",
+            "Kibauni"
+          ]
+        },
+        "Makueni": {
+          "Mbooni": [
+            "Tulimani",
+            "Mbooni",
+            "Kithungo/Kitundu",
+            "Kiteta/Kisau",
+            "Waia-Kako",
+            "Kalawa"
+          ],
+          "Kilome": [
+            "Kasikeu",
+            "Mukaa",
+            "Kiima Kiu/Kalanzoni"
+          ],
+          "Kaiti": [
+            "Ukia",
+            "Kee",
+            "Kilungu",
+            "Ilima"
+          ],
+          "Makueni": [
+            "Wote",
+            "Muvau/Kikuumini",
+            "Mavindini",
+            "Kitise/Kithuki",
+            "Kathonzweni",
+            "Nzaui/Kilili/Kalamba",
+            "Mbitini"
+          ],
+          "Kibwezi West": [
+            "Makindu",
+            "Nguumo",
+            "Kikumbulyu North",
+            "Kikumbulyu South",
+            "Nguu/Masumba",
+            "Emali/Mulala"
+          ],
+          "Kibwezi East": [
+            "Masongaleni",
+            "Mtito Andei",
+            "Thange",
+            "Ivingoni/Nzambani"
+          ]
+        },
+        "Nyandarua": {
+          "Kinangop": [
+            "Engineer",
+            "Gathara",
+            "North Kinangop",
+            "Murungaru",
+            "Njabini\\Kiburu",
+            "Nyakio",
+            "Githabai",
+            "Magumu"
+          ],
+          "Kipipiri": [
+            "Wanjohi",
+            "Kipipiri",
+            "Geta",
+            "Githioro"
+          ],
+          "Ol Kalou": [
+            "Karau",
+            "Kanjuiri Range",
+            "Mirangine",
+            "Kaimbaga",
+            "Rurii"
+          ],
+          "Ol Jorok": [
+            "Gathanji",
+            "Gatimu",
+            "Weru",
+            "Charagita"
+          ],
+          "Ndaragwa": [
+            "Leshau/Pondo",
+            "Kiriita",
+            "Central",
+            "Shamata"
+          ]
+        },
+        "Nyeri": {
+          "Tetu": [
+            "Dedan Kimanthi",
+            "Wamagana",
+            "Aguthi-Gaaki"
+          ],
+          "Kieni": [
+            "Mweiga",
+            "Naromoru Kiamathaga",
+            "Mwiyogo/Endarasha",
+            "Mugunda",
+            "Gatarakwa",
+            "Thegu River",
+            "Kabaru",
+            "Gakawa"
+          ],
+          "Mathira": [
+            "Ruguru",
+            "Magutu",
+            "Iraini",
+            "Konyu",
+            "Kirimukuyu",
+            "Karatina Town"
+          ],
+          "Othaya": [
+            "Mahiga",
+            "Iria-Ini",
+            "Chinga",
+            "Karima"
+          ],
+          "Mukurweini": [
+            "Gikondi",
+            "Rugi",
+            "Mukurwe-Ini West",
+            "Mukurwe-Ini Central"
+          ],
+          "Nyeri Town": [
+            "Kiganjo/Mathari",
+            "Rware",
+            "Gatitu/Muruguru",
+            "Ruring'U",
+            "Kamakwa/Mukaro"
+          ]
+        },
+        "Kirinyaga": {
+          "Mwea": [
+            "Mutithi",
+            "Kangai",
+            "Thiba",
+            "Wamumu",
+            "Nyangati",
+            "Murinduko",
+            "Gathigiriri",
+            "Tebere"
+          ],
+          "Gichugu": [
+            "Kabare",
+            "Baragwi",
+            "Njukiini",
+            "Ngariama",
+            "Karumandi"
+          ],
+          "Ndia": [
+            "Mukure",
+            "Kiine",
+            "Kariti"
+          ],
+          "Kirinyaga Central": [
+            "Mutira",
+            "Kanyekini",
+            "Kerugoya",
+            "Inoi"
+          ]
+        },
+        "Murang'A": {
+          "Kangema": [
+            "Kanyenya-Ini",
+            "Muguru",
+            "Rwathia"
+          ],
+          "Mathioya": [
+            "Gitugi",
+            "Kiru",
+            "Kamacharia"
+          ],
+          "Kiharu": [
+            "Wangu",
+            "Mugoiri",
+            "Mbiri",
+            "Township",
+            "Murarandia",
+            "Gaturi"
+          ],
+          "Kigumo": [
+            "Kahumbu",
+            "Muthithi",
+            "Kigumo",
+            "Kangari",
+            "Kinyona"
+          ],
+          "Maragwa": [
+            "Kimorori/Wempa",
+            "Makuyu",
+            "Kambiti",
+            "Kamahuha",
+            "Ichagaki",
+            "Nginda"
+          ],
+          "Kandara": [
+            "Ng'Araria",
+            "Muruka",
+            "Kagundu-Ini",
+            "Gaichanjiru",
+            "Ithiru",
+            "Ruchu"
+          ],
+          "Gatanga": [
+            "Ithanga",
+            "Kakuzi/Mitubiri",
+            "Mugumo-Ini",
+            "Kihumbu-Ini",
+            "Gatanga",
+            "Kariara"
+          ]
+        },
+        "Kiambu": {
+          "Gatundu South": [
+            "Kiamwangi",
+            "Kiganjo",
+            "Ndarugu",
+            "Ngenda"
+          ],
+          "Gatundu North": [
+            "Gituamba",
+            "Githobokoni",
+            "Chania",
+            "Mang'U"
+          ],
+          "Juja": [
+            "Murera",
+            "Theta",
+            "Juja",
+            "Witeithie",
+            "Kalimoni"
+          ],
+          "Thika Town": [
+            "Township",
+            "Kamenu",
+            "Hospital",
+            "Gatuanyaga",
+            "Ngoliba"
+          ],
+          "Ruiru": [
+            "Gitothua",
+            "Biashara",
+            "Gatongora",
+            "Kahawa Sukari",
+            "Kahawa Wendani",
+            "Kiuu",
+            "Mwiki",
+            "Mwihoko"
+          ],
+          "Githunguri": [
+            "Githunguri",
+            "Githiga",
+            "Ikinu",
+            "Ngewa",
+            "Komothai"
+          ],
+          "Kiambu": [
+            "Ting'Ang'A",
+            "Ndumberi",
+            "Riabai",
+            "Township"
+          ],
+          "Kiambaa": [
+            "Cianda",
+            "Karuri",
+            "Ndenderu",
+            "Muchatha",
+            "Kihara"
+          ],
+          "Kabete": [
+            "Gitaru",
+            "Muguga",
+            "Nyadhuna",
+            "Kabete",
+            "Uthiru"
+          ],
+          "Kikuyu": [
+            "Karai",
+            "Nachu",
+            "Sigona",
+            "Kikuyu",
+            "Kinoo"
+          ],
+          "Limuru": [
+            "Bibirioni",
+            "Limuru Central",
+            "Ndeiya",
+            "Limuru East",
+            "Ngecha Tigoni"
+          ],
+          "Lari": [
+            "Kinale",
+            "Kijabe",
+            "Nyanduma",
+            "Kamburu",
+            "Lari/Kirenga"
+          ]
+        },
+        "Turkana": {
+          "Turkana North": [
+            "Kaeris",
+            "Lake Zone",
+            "Lapur",
+            "Kaaleng/Kaikor",
+            "Kibish",
+            "Nakalale"
+          ],
+          "Turkana West": [
+            "Kakuma",
+            "Lopur",
+            "Letea",
+            "Songot",
+            "Kalobeyei",
+            "Lokichoggio"
+          ],
+          "Turkana Central": [
+            "Kang'Atotha",
+            "Lodwar Township",
+            "Kanamkemer"
+          ],
+          "Turkana East": [
+            "Kolobia",
+            "Kapedo/Napeitom"
+          ],
+          "Turkana South": [
+            "Kalapata",
+            "Katilu",
+            "Lokichar"
+          ],
+          "Loima": [
+            "Loima",
+            "Lokiriama/Lorengai",
+            "Kotaruk/Lorengai",
+            "Kerio Delta"
+          ]
+        },
+        "West Pokot": {
+          "Kapenguria": [
+            "Siyoi",
+            "Riwo",
+            "Municipality",
+            "Endugh"
+          ],
+          "Sigor": [
+            "Masol",
+            "Sekerr",
+            "Lomuke",
+            "Weiwei"
+          ],
+          "Kacheliba": [
+            "Suam",
+            "Kasei",
+            "Konyaon",
+            "Kacheliba",
+            "Chepareria"
+          ],
+          "Pokot South": [
+            "Batei",
+            "Lombeh",
+            "Chepkorio"
+          ]
+        },
+        "Samburu": {
+          "Samburu West": [
+            "Lodokejek",
+            "Suguta Marmar",
+            "Maralal",
+            "Poro",
+            "Loosuk"
+          ],
+          "Samburu North": [
+            "Elbarta",
+            "Nachola",
+            "Nyiro",
+            "Ndoto"
+          ],
+          "Samburu East": [
+            "Waso",
+            "Wamba East",
+            "Wamba West",
+            "Wamba North"
+          ]
+        },
+        "Trans Nzoia": {
+          "Kwanza": [
+            "Kapomboi",
+            "Kwanza",
+            "Keiyo",
+            "Biketi"
+          ],
+          "Endebes": [
+            "Chepchoina",
+            "Endebes",
+            "Matisi",
+            "Kinyoro"
+          ],
+          "Saboti": [
+            "Saboti",
+            "Mwatate",
+            "Machinjir",
+            "Kiminini",
+            "Murundi"
+          ],
+          "Kiminini": [
+            "Sinyerere",
+            "Nalondo",
+            "Matunda",
+            "Kiminini",
+            "Waitaluk"
+          ],
+          "Cherangany": [
+            "Cherangany/Suwerwa",
+            "Siuna",
+            "Muserechi",
+            "Mwea",
+            "Moi'S Bridge"
+          ]
+        },
+        "Uasin Gishu": {
+          "Soy": [
+            "Soy",
+            "Kipsomba",
+            "Ziwa",
+            "Koiwa",
+            "Segero/Barsombe"
+          ],
+          "Turbo": [
+            "Naiberi",
+            "Kapseret",
+            "Megun",
+            "Kiplombe",
+            "Kamariny",
+            "Kipkaren"
+          ],
+          "Ainabkoi": [
+            "Ainabkoi/Olare",
+            "Kapsoya",
+            "Kipsomba"
+          ],
+          "Kapseret": [
+            "Kapturo",
+            "Kuinet/Kapsuswa",
+            "Kapsao",
+            "Tarakwa"
+          ],
+          "Kesses": [
+            "Kaptel/Kiptullo",
+            "Cheptil",
+            "Chekaria",
+            "Tumeyo"
+          ],
+          "Moiben": [
+            "Kimumu",
+            "Kapngetuny",
+            "Sergoit",
+            "Tarakwa"
+          ]
+        },
+        "Elgeyo Marakwet": {
+          "Marakwet East": [
+            "Kapkagaon",
+            "Tirap",
+            "Koibos"
+          ],
+          "Marakwet West": [
+            "Londiani",
+            "Moiben Kuserwo",
+            "Moiben/Chesongech",
+            "Kamoi",
+            "Sambaria"
+          ],
+          "Keiyo North": [
+            "Kabarak",
+            "Tambach",
+            "Kesot",
+            "Kamariny"
+          ],
+          "Keiyo South": [
+            "Kaptarakwa",
+            "Chepkorio",
+            "Motioli",
+            "Tambach",
+            "Kiptuiya",
+            "Kerio"
+          ]
+        },
+        "Nandi": {
+          "Tinderet": [
+            "Nandi Hills",
+            "Kipkaren",
+            "Kipkeyo",
+            "Kapng'Etuny"
+          ],
+          "Aldai": [
+            "Kapsaos",
+            "Kipkoim",
+            "Chemalal",
+            "Kapchorwa"
+          ],
+          "Nandi Hills": [
+            "Kapbara",
+            "Kapchere",
+            "Cheptoyon",
+            "Kimolong"
+          ],
+          "Chesumei": [
+            "Lelem",
+            "Kipworom",
+            "Chebaru",
+            "Mugunga",
+            "Kapsengere"
+          ],
+          "Emgwen": [
+            "Kapngetuny",
+            "Kipchepton",
+            "Kiplombe"
+          ],
+          "Mosop": [
+            "Kaptarakwa",
+            "Kapsabet",
+            "Kesumet",
+            "Kipkabur",
+            "Kiptuiya"
+          ]
+        },
+        "Baringo": {
+          "Tiaty": [
+            "Kologir",
+            "Kang'Irangero",
+            "Chepyuk",
+            "Mogotio",
+            "Ndanya"
+          ],
+          "Baringo North": [
+            "Bartabwa",
+            "Kabarnet",
+            "Kabartonjo",
+            "Moiben",
+            "Kamok"
+          ],
+          "Baringo Central": [
+            "Ewale",
+            "Mugunga",
+            "Mukurweini",
+            "Kesumet"
+          ],
+          "Mogotio": [
+            "Kerio Valley",
+            "Kampi Ya Samaki",
+            "Mogotio",
+            "Salawa",
+            "Eldoret East"
+          ],
+          "Baringo South": [
+            "Maram",
+            "Rongai",
+            "Kiptoi",
+            "Ndoga"
+          ]
+        },
+        "Laikipia": {
+          "Laikipia West": [
+            "Rumuruti",
+            "Ol-Moran",
+            "Ndiriri",
+            "Gatarakwa"
+          ],
+          "Laikipia North": [
+            "Kimanjo",
+            "Ol'Ng'Arua",
+            "Suguta Marmar",
+            "Bunyore",
+            "Tigonyi"
+          ],
+          "Laikipia East": [
+            "Ngobit",
+            "Nanyuki",
+            "Lamuria",
+            "Thingithu"
+          ]
+        },
+        "Nakuru": {
+          "Naivasha": [
+            "Hell'S Gate",
+            "Maai Mahiu",
+            "Karati",
+            "Viwandani",
+            "Humor",
+            "Karagita"
+          ],
+          "Gilgil": [
+            "Gilgil",
+            "Murinduko",
+            "Mbunde",
+            "Kikopey"
+          ],
+          "Kuresoi South": [
+            "Kiambiu",
+            "Tenges",
+            "Ndaragwa",
+            "Morop",
+            "Aror"
+          ],
+          "Kuresoi North": [
+            "Kiptuiya",
+            "Kampio",
+            "Kipchui",
+            "Ndathiru",
+            "Kongasis",
+            "Saboti"
+          ],
+          "Molo": [
+            "Molo",
+            "Mariashon",
+            "Teret",
+            "Talai",
+            "Koyumot"
+          ],
+          "Njoro": [
+            "Mau Narok",
+            "Lare",
+            "Kisiriri",
+            "Ndiwa",
+            "Mwitoti",
+            "Mugoiri"
+          ],
+          "Rongai": [
+            "Mosop",
+            "Solai",
+            "Suchai",
+            "Kabazi",
+            "Sirikwa"
+          ],
+          "Bahati": [
+            "Wanyororu",
+            "Lanet/Umbui",
+            "Kabatini",
+            "Lanet"
+          ],
+          "Subukia": [
+            "Subukia",
+            "Wanyororu",
+            "Gathing'A",
+            "Waldai"
+          ],
+          "Nakuru Town West": [
+            "Shaaba",
+            "Shalom",
+            "Naivasha",
+            "Rose Cottage",
+            "Rhino"
+          ],
+          "Nakuru Town East": [
+            "Nakuru Town",
+            "Gitombo",
+            "Burnt Forest",
+            "Subukia"
+          ]
+        },
+        "Narok": {
+          "Narok North": [
+            "Koyumot",
+            "Suswa",
+            "Narok Town",
+            "Motok",
+            "Olelshwa",
+            "Kipkelion"
+          ],
+          "Narok East": [
+            "Olelo Sokwan",
+            "Pambo",
+            "Kewapaki",
+            "Naibor",
+            "Olesoswa"
+          ],
+          "Narok South": [
+            "Mbirikani",
+            "Loita",
+            "Majibu",
+            "Eor Esiam"
+          ],
+          "Narok West": [
+            "Mara",
+            "Kimintet",
+            "Olakewua",
+            "Inkarakapot"
+          ],
+          "Transmara West": [
+            "Kipkelion",
+            "Kapsiru",
+            "Moita"
+          ],
+          "Transmara East": [
+            "Keyian",
+            "Migori",
+            "Kebelio",
+            "Nyagawa"
+          ]
+        },
+        "Kajiado": {
+          "Kajiado North": [
+            "Olkejuado",
+            "Mosiro",
+            "Ongata Rongai",
+            "Ngong",
+            "Kiserian"
+          ],
+          "Kajiado Central": [
+            "Kimana",
+            "Elmoli",
+            "Imaror",
+            "Mosiro",
+            "Matapato South",
+            "Olorropil"
+          ],
+          "Kajiado East": [
+            "Kitengela",
+            "Kisaju",
+            "Imaror",
+            "Maasai",
+            "Kenyawa",
+            "Katikati",
+            "Endebess"
+          ],
+          "Kajiado West": [
+            "Mosiro",
+            "Olorropil",
+            "Kimana",
+            "Maasai",
+            "Morijo"
+          ],
+          "Kajiado South": [
+            "Loitokitok",
+            "Kukiyang",
+            "Kimana",
+            "Mashuru",
+            "Matapato South"
+          ]
+        },
+        "Keroka": {
+          "Nyamira": [
+            "Nyamira Town",
+            "Keera",
+            "Siambele",
+            "Keroka",
+            "Kiango",
+            "Kiamokama"
+          ],
+          "Borabu": [
+            "Geta",
+            "Kiamariga",
+            "Nyamira Town",
+            "Manga",
+            "Marani"
+          ],
+          "Masaba": [
+            "Nyamira Town",
+            "Keera",
+            "Nyambunga",
+            "Ririga",
+            "Nyankoya",
+            "Siambele"
+          ],
+          "Manga": [
+            "Nyamira Town",
+            "Kiamariga",
+            "Nyamira Central",
+            "Bosongo"
+          ],
+          "West Mugirango": [
+            "Mang'Ara",
+            "Ekerenyo",
+            "Nyamira Central",
+            "Nyamira East",
+            "Kitao",
+            "Orinda"
+          ]
+        },
+        "Kisii": {
+          "Kitutu Chache North": [
+            "Kemera",
+            "Kitutu Central",
+            "Magwagwa",
+            "Etago",
+            "Nyatieko",
+            "Birongo"
+          ],
+          "Kitutu Chache South": [
+            "Nango",
+            "Mwabosire",
+            "Kegati",
+            "Nyankoya",
+            "Nyatieko",
+            "Nyamarama"
+          ],
+          "Nyaribari Masaba": [
+            "Bobasi",
+            "Nyamira Central",
+            "Nyamira Town",
+            "Bosongo",
+            "Momweta"
+          ],
+          "Nyaribari Chache": [
+            "Bobasi",
+            "Keera",
+            "Ririga",
+            "Kegati",
+            "Nyamira Town"
+          ],
+          "Bonchari": [
+            "Keera",
+            "Magwagwa",
+            "Siambele",
+            "Nyamira Town"
+          ],
+          "South Mugirango": [
+            "Magwagwa",
+            "Nyambunga",
+            "Nyamira Town",
+            "Nyankoya",
+            "Nyamira East"
+          ],
+          "Bobasi": [
+            "Nyamira Town",
+            "Keera",
+            "Nyankoya",
+            "Nyamira Central",
+            "Bosongo"
+          ],
+          "Bomachoge Borabu": [
+            "Nyamira Central",
+            "Nyamira East",
+            "Borabu",
+            "Bosongo",
+            "Nyankoya"
+          ],
+          "Bomachoge Chache": [
+            "Kegati",
+            "Kegogro",
+            "Siambele",
+            "Nyamira Central",
+            "Nyankoya"
+          ]
+        },
+        "Migori": {
+          "Awendo": [
+            "Awendo Town",
+            "Kanyamkago",
+            "Kamagambo",
+            "Uriri"
+          ],
+          "Kuria East": [
+            "Kuria East",
+            "Kamagambo",
+            "Awendo Town",
+            "Nyatike"
+          ],
+          "Kuria West": [
+            "Awendo Town",
+            "Nyatike",
+            "Uriri",
+            "Migori"
+          ],
+          "Nyatike": [
+            "Nyatike",
+            "Awendo Town",
+            "Kuria East",
+            "Kuria West"
+          ],
+          "Rongo": [
+            "Awendo Town",
+            "Uriri",
+            "Migori",
+            "Kanyamkago"
+          ],
+          "Sun": [
+            "Nyatike",
+            "Awendo Town",
+            "Kuria East",
+            "Kuria West"
+          ]
+        },
+        "Homa Bay": {
+          "Ndhiwa": [
+            "Mbita",
+            "Ndhiwa Town",
+            "Uriri",
+            "Kabondo Kasipul"
+          ],
+          "Kabondo Kasipul": [
+            "Ndhiwa Town",
+            "Mbita",
+            "Uriri",
+            "Homa Bay"
+          ],
+          "Kasipul": [
+            "Mbita",
+            "Ndhiwa Town",
+            "Uriri",
+            "Rangwe"
+          ],
+          "Karachuonyo": [
+            "Ndhiwa Town",
+            "Mbita",
+            "Uriri",
+            "Homa Bay"
+          ],
+          "Homa Bay Town": [
+            "Ndhiwa Town",
+            "Mbita",
+            "Uriri",
+            "Rangwe"
+          ],
+          "Rangwe": [
+            "Ndhiwa Town",
+            "Mbita",
+            "Uriri",
+            "Homa Bay"
+          ],
+          "Suba North": [
+            "Ndhiwa Town",
+            "Mbita",
+            "Uriri",
+            "Rangwe"
+          ],
+          "Suba South": [
+            "Ndhiwa Town",
+            "Mbita",
+            "Uriri",
+            "Homa Bay"
+          ]
+        },
+        "Kisumu": {
+          "Kisumu West": [
+            "Kisumu Town",
+            "Mbita",
+            "Nyatike",
+            "Homa Bay"
+          ],
+          "Kisumu East": [
+            "Kisumu Town",
+            "Mbita",
+            "Nyatike",
+            "Homa Bay"
+          ],
+          "Kisumu Central": [
+            "Kisumu Town",
+            "Mbita",
+            "Nyatike",
+            "Homa Bay"
+          ],
+          "Seme": [
+            "Kisumu Town",
+            "Mbita",
+            "Nyatike",
+            "Homa Bay"
+          ],
+          "Nyando": [
+            "Kisumu Town",
+            "Mbita",
+            "Nyatike",
+            "Homa Bay"
+          ],
+          "Muhoroni": [
+            "Kisumu Town",
+            "Mbita",
+            "Nyatike",
+            "Homa Bay"
+          ],
+          "Nyakach": [
+            "Kisumu Town",
+            "Mbita",
+            "Nyatike",
+            "Homa Bay"
+          ]
+        },
+        "Siaya": {
+          "Ugenya": [
+            "Ugenya Town",
+            "Uriri",
+            "Mbita",
+            "Nyakach"
+          ],
+          "Ugunja": [
+            "Ugunja Town",
+            "Uriri",
+            "Mbita",
+            "Nyakach"
+          ],
+          "Alego Usonga": [
+            "Ugunja Town",
+            "Uriri",
+            "Mbita",
+            "Nyakach"
+          ],
+          "Gem": [
+            "Ugunja Town",
+            "Uriri",
+            "Mbita",
+            "Nyakach"
+          ],
+          "Bondo": [
+            "Ugunja Town",
+            "Uriri",
+            "Mbita",
+            "Nyakach"
+          ],
+          "Rarieda": [
+            "Ugunja Town",
+            "Uriri",
+            "Mbita",
+            "Nyakach"
+          ]
+        },
+        "Busia": {
+          "Teso North": [
+            "Malaba",
+            "Ang'Urai North",
+            "Ang'Urai South",
+            "Amukura East",
+            "Amukura West",
+            "Amukura Central"
+          ],
+          "Teso South": [
+            "Ang'Urai South",
+            "Amukura Central",
+            "Ang'Urai North",
+            "Malaba"
+          ],
+          "Nambale": [
+            "Nambale",
+            "Akamai",
+            "Achenga",
+            "Amukura Central",
+            "Amukura East"
+          ],
+          "Matayos": [
+            "Matayos South",
+            "Maloba",
+            "Mulwanda",
+            "Nambale"
+          ],
+          "Butula": [
+            "Marachi West",
+            "Marachi North",
+            "Marachi Central",
+            "Butula South",
+            "Mulwanda"
+          ],
+          "Funyula": [
+            "Funyula Town",
+            "Bukhayo West",
+            "Bukhayo Central",
+            "Bukhayo East",
+            "Nambale"
+          ],
+          "Bunyala": [
+            "Bukhayo West",
+            "Bukhayo Central",
+            "Bukhayo East",
+            "Nambale"
+          ]
+        },
+        "Kakamega": {
+          "Lurambi": [
+            "Sheer",
+            "Likhomani",
+            "Shirere",
+            "Butsotso South",
+            "Muranda"
+          ],
+          "Navakholo": [
+            "Mukhonje",
+            "Navakholo",
+            "Shinyalu",
+            "Butsotso North",
+            "Butsotso Central"
+          ],
+          "Malava": [
+            "Malava",
+            "Chevaywa",
+            "Kamukuywa",
+            "Seng'Oni",
+            "West Wanga",
+            "Mukhonje"
+          ],
+          "Lugari": [
+            "Chekalini",
+            "Chekalini East",
+            "Mukhonje",
+            "Butali",
+            "Chekalini West"
+          ],
+          "Likuyani": [
+            "Chekalini",
+            "Chekalini East",
+            "Butsotso North",
+            "Butsotso Central"
+          ],
+          "Mumias West": [
+            "Butula",
+            "Butula Central",
+            "Butula East",
+            "Matayos West",
+            "Butula South"
+          ],
+          "Mumias East": [
+            "Mumias Town",
+            "Shamakhokho",
+            "Ekahawa",
+            "Mahiakalo",
+            "Butula East"
+          ],
+          "Matungu": [
+            "Kokuyo",
+            "Kaimosi",
+            "Kakurume",
+            "Kimilili",
+            "Mahiakalo"
+          ],
+          "Butere": [
+            "Butere",
+            "Butere Central",
+            "Butere North",
+            "Butere South"
+          ],
+          "Khwisero": [
+            "Khwisero",
+            "Khwisero Central",
+            "Khwisero East",
+            "Khwisero West"
+          ],
+          "Shinyalu": [
+            "Shinyalu",
+            "Shinyalu West",
+            "Shinyalu East",
+            "Shinyalu Central",
+            "Shinyalu South"
+          ],
+          "Ikolomani": [
+            "Ikolomani",
+            "Ikolomani East",
+            "Ikolomani West",
+            "Ikolomani Central"
+          ]
+        },
+        "Vihiga": {
+          "Vihiga": [
+            "Vihiga Town",
+            "Vihiga North",
+            "Vihiga South",
+            "Vihiga East"
+          ],
+          "Sabatia": [
+            "Sabatia",
+            "Sabatia North",
+            "Sabatia South",
+            "Sabatia East",
+            "Sabatia West"
+          ],
+          "Hamisi": [
+            "Hamisi",
+            "Hamisi North",
+            "Hamisi South",
+            "Hamisi East",
+            "Hamisi West"
+          ],
+          "Luanda": [
+            "Luanda Town",
+            "Emuhaya",
+            "East Bunyore",
+            "West Bunyore",
+            "South Bunyore"
+          ],
+          "Emuhaya": [
+            "Central Bunyore",
+            "East Bunyore",
+            "North Bunyore",
+            "South Bunyore"
+          ]
+        },
+        "Bungoma": {
+          "Bungoma North": [
+            "Kimilili",
+            "Naitiri",
+            "Tongaren",
+            "Kabula",
+            "Chwele"
+          ],
+          "Kimilili": [
+            "Kimilili Town",
+            "Kimilili West",
+            "Kimilili Central",
+            "Kimilili East",
+            "Kimilili South"
+          ],
+          "Mt. Elgon": [
+            "Mt. Elgon",
+            "Mt. Elgon East",
+            "Mt. Elgon West",
+            "Mt. Elgon North",
+            "Mt. Elgon South"
+          ],
+          "Sirisia": [
+            "Sirisia",
+            "Lwandanyi",
+            "Namwela",
+            "Malakisi/South Kulisiru",
+            "Cheptais"
+          ],
+          "Kabuchai": [
+            "Kabuchai",
+            "Kabuchai North",
+            "Kabuchai South",
+            "Kabuchai East",
+            "Kabuchai West"
+          ],
+          "Kanduyi": [
+            "Kanduyi",
+            "Kanduyi North",
+            "Kanduyi South",
+            "Kanduyi East",
+            "Kanduyi West"
+          ],
+          "Webuye East": [
+            "Webuye",
+            "Webuye North",
+            "Webuye South",
+            "Webuye East",
+            "Webuye West"
+          ],
+          "Webuye West": [
+            "Webuye Town",
+            "Webuye Central",
+            "Webuye East",
+            "Webuye West",
+            "Webuye South"
+          ]
+        },
+        "Nyamira": {
+          "West Mugirango": [
+            "Bosamaro",
+            "Bomwagamo",
+            "Bonyamatuta",
+            "Bokimonge",
+            "Itibo"
+          ],
+          "North Mugirango": [
+            "Nyansiongo",
+            "Ekerenyo",
+            "Itibo",
+            "Magwagwa",
+            "Bonyamatuta"
+          ],
+          "Borabu": [
+            "Nyansiongo",
+            "Rigoma",
+            "Bokimonge",
+            "Bomwagamo",
+            "Machoge Chache"
+          ],
+          "Kitutu Masaba": [
+            "Gachuba",
+            "Magombo",
+            "Gesima",
+            "Manga",
+            "Nyamache"
+          ],
+          "Nyaribari Masaba": [
+            "Gesusu",
+            "Gachuba",
+            "Ichuni",
+            "Manga",
+            "Bosoti"
+          ],
+          "Nyaribari Chache": [
+            "Nyaribari Masaba",
+            "Gesusu",
+            "Masimba",
+            "Gianchore",
+            "Birongo"
+          ]
+        }
+      }
+    // Default for other counties
+    const countyList = Object.keys(counties).concat(["Baringo","Kakamega","Kericho","Meru","Isiolo","Laikipia","Turkana","Marsabit","Homabay","Embu","Kilifi","Nyeri","Kitui","Narok","Machakos","Migori","Kajiado","Trans Nzoia","Nyamira","Muranga","Siaya","Busia","Garissa","Kwale"]);
+
+    // Populate county dropdown
+    function populateCounties() {
+      let opts = `<option value="">--Select County--</option>`;
+      countyList.forEach(c =>
+        opts += `<option value="${c}">${c}</option>`
+      );
+      document.getElementById("county").innerHTML = opts;
+      document.getElementById("vendorCounty").innerHTML = '<option value="">County</option>' + opts;
+    }
+    // Populate subcounties
+    function updateSubcounties(){
+      let county = document.getElementById("county").value;
+      let subs = counties[county] ? Object.keys(counties[county].subcounties) : [];
+      let opts = `<option value="">--Select Subcounty--</option>`;
+      subs.forEach(s=>opts+=`<option value="${s}">${s}</option>`);
+      document.getElementById("subcounty").innerHTML = opts;
+      updateConstituencies();
+    }
+    // Populate constituencies
+    function updateConstituencies(){
+      let county = document.getElementById("county").value;
+      let sub = document.getElementById("subcounty").value;
+      let consts = counties[county] && counties[county].subcounties[sub] ? counties[county].subcounties[sub] : [];
+      let opts = `<option value="">--Select Constituency--</option>`;
+      consts.forEach(c=>opts+=`<option value="${c}">${c}</option>`);
+      document.getElementById("constituency").innerHTML = opts;
+    }
+
+    populateCounties();
+
+    // GPS scan location
+    function getLocation() {
+      if (navigator.geolocation) {
+        document.getElementById('locationError').innerHTML = "Detecting location...";
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            document.getElementById('locationError').innerHTML = "Location detected! Auto-fetching nearest county...";
+            fetchCountyFromCoords(pos.coords.latitude, pos.coords.longitude);
+          },
+          (err) => {
+            document.getElementById('locationError').innerHTML = "Location unavailable. Please allow GPS permission.";
+          }
+        );
+      } else {
+        document.getElementById('locationError').innerHTML = "Geolocation not supported.";
+      }
+    }
+
+    // Maps coordinates to nearest county (approximate)
+    function fetchCountyFromCoords(lat, lng) {
+      // Demo: We only match Nairobi and Kisumu, extend this in production
+      if(lat < -0.3 && lat > -2 && lng > 36 && lng < 37.2) {
+        document.getElementById("county").value = "Nairobi";
+      } else if(lat > -0.2 && lat < 0.5 && lng > 34.6 && lng < 34.9) {
+        document.getElementById("county").value = "Kisumu";
+      } else if(lat > -1.3 && lat < -0.1 && lng > 35.2 && lng < 35.5) {
+        document.getElementById("county").value = "Bomet";
+      } else {
+        document.getElementById("county").value = countyList[Math.floor(Math.random()*countyList.length)];
+      }
+      updateSubcounties();
+      setTimeout(()=>{
+        document.getElementById('locationError').innerHTML = "";
+        fetchSoilByLocation();
+      },700);
+    }
+
+    // Soil data by location (stub, would use backend in production)
+    const exampleSoilStats = {
+        "Kiambu": {
+          "ph": 5.5,
+          "k": 256,
+          "p": 32,
+          "n": 0.2,
+          "zn": 1.0,
+          "s": 12,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Murang'a": {
+          "ph": 5.3,
+          "k": 228,
+          "p": 30,
+          "n": 0.18,
+          "zn": 2.9,
+          "s": 6,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Nyeri": {
+          "ph": 5.2,
+          "k": 244,
+          "p": 39,
+          "n": 0.16,
+          "zn": 2.3,
+          "s": 5,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Kirinyaga": {
+          "ph": 6.5,
+          "k": 220,
+          "p": 37,
+          "n": 0.17,
+          "zn": 2.5,
+          "s": 11,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Nyandarua": {
+          "ph": 5.2,
+          "k": 224,
+          "p": 39,
+          "n": 0.2,
+          "zn": 2.8,
+          "s": 6,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Kakamega": {
+          "ph": 4.8,
+          "k": 180,
+          "p": 29,
+          "n": 0.17,
+          "zn": 0.9,
+          "s": 10,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Bungoma": {
+          "ph": 5.2,
+          "k": 192,
+          "p": 30,
+          "n": 0.19,
+          "zn": 3.5,
+          "s": 6,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Vihiga": {
+          "ph": 4.7,
+          "k": 219,
+          "p": 25,
+          "n": 0.12,
+          "zn": 1.9,
+          "s": 9,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Kisumu": {
+          "ph": 6.6,
+          "k": 209,
+          "p": 26,
+          "n": 0.13,
+          "zn": 1.2,
+          "s": 6,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Homabay": {
+          "ph": 5.4,
+          "k": 170,
+          "p": 21,
+          "n": 0.15,
+          "zn": 1.3,
+          "s": 8,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Kisii": {
+          "ph": 5.4,
+          "k": 230,
+          "p": 25,
+          "n": 0.17,
+          "zn": 2.9,
+          "s": 6,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Nyamira": {
+          "ph": 5.1,
+          "k": 214,
+          "p": 34,
+          "n": 0.14,
+          "zn": 2.1,
+          "s": 8,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Migori": {
+          "ph": 5.8,
+          "k": 181,
+          "p": 18,
+          "n": 0.16,
+          "zn": 2.1,
+          "s": 7,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Siaya": {
+          "ph": 5.7,
+          "k": 185,
+          "p": 27,
+          "n": 0.12,
+          "zn": 2.8,
+          "s": 9,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Uasin Gishu": {
+          "ph": 5.8,
+          "k": 256,
+          "p": 39,
+          "n": 0.2,
+          "zn": 2.6,
+          "s": 5,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Trans Nzoia": {
+          "ph": 5.9,
+          "k": 273,
+          "p": 38,
+          "n": 0.22,
+          "zn": 2.3,
+          "s": 9,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Nandi": {
+          "ph": 5.7,
+          "k": 223,
+          "p": 34,
+          "n": 0.18,
+          "zn": 3.3,
+          "s": 9,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Bomet": {
+          "ph": 5.1,
+          "k": 210,
+          "p": 28,
+          "n": 0.17,
+          "zn": 1.7,
+          "s": 11,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Kericho": {
+          "ph": 5.7,
+          "k": 236,
+          "p": 33,
+          "n": 0.19,
+          "zn": 1.1,
+          "s": 11,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Machakos": {
+          "ph": 5.8,
+          "k": 200,
+          "p": 23,
+          "n": 0.1,
+          "zn": 3.4,
+          "s": 7,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Makueni": {
+          "ph": 6.2,
+          "k": 174,
+          "p": 19,
+          "n": 0.09,
+          "zn": 0.9,
+          "s": 11,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Kitui": {
+          "ph": 6.1,
+          "k": 200,
+          "p": 11,
+          "n": 0.11,
+          "zn": 3.1,
+          "s": 8,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Embu": {
+          "ph": 5.4,
+          "k": 240,
+          "p": 22,
+          "n": 0.17,
+          "zn": 2.4,
+          "s": 10,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Meru": {
+          "ph": 5.8,
+          "k": 245,
+          "p": 31,
+          "n": 0.19,
+          "zn": 2.2,
+          "s": 7,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Kilifi": {
+          "ph": 6.7,
+          "k": 137,
+          "p": 19,
+          "n": 0.09,
+          "zn": 3.1,
+          "s": 7,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Kwale": {
+          "ph": 6.7,
+          "k": 151,
+          "p": 16,
+          "n": 0.1,
+          "zn": 1.9,
+          "s": 8,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Taita Taveta": {
+          "ph": 6.4,
+          "k": 170,
+          "p": 22,
+          "n": 0.13,
+          "zn": 3.4,
+          "s": 5,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Garissa": {
+          "ph": 6.6,
+          "k": 132,
+          "p": 12,
+          "n": 0.09,
+          "zn": 3.1,
+          "s": 5,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Marsabit": {
+          "ph": 6.7,
+          "k": 161,
+          "p": 9,
+          "n": 0.09,
+          "zn": 2.9,
+          "s": 7,
+          "moisture": 20,
+          "texture": "Loam"
+        },
+        "Mombasa": {
+              "ph": 6.2,
+              "k": 100,
+              "p": 28,
+              "n": 2.0,
+              "zn": 1.8,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Kwale": {
+              "ph": 6.7,
+              "k": 151,
+              "p": 16,
+              "n": 0.1,
+              "zn": 1.9,
+              "s": 8,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Kilifi": {
+              "ph": 6.7,
+              "k": 137,
+              "p": 19,
+              "n": 0.09,
+              "zn": 3.1,
+              "s": 7,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Tana River": {
+              "ph": 6.2,
+              "k": 100,
+              "p": 28,
+              "n": 2.0,
+              "zn": 1.8,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Lamu": {
+              "ph": 6.2,
+              "k": 100,
+              "p": 28,
+              "n": 2.0,
+              "zn": 1.8,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Taita Taveta": {
+              "ph": 6.4,
+              "k": 170,
+              "p": 22,
+              "n": 0.13,
+              "zn": 3.4,
+              "s": 5,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Garissa": {
+              "ph": 6.6,
+              "k": 132,
+              "p": 12,
+              "n": 0.09,
+              "zn": 3.1,
+              "s": 5,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Wajir": {
+              "ph": 6.2,
+              "k": 100,
+              "p": 28,
+              "n": 2.0,
+              "zn": 1.8,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Mandera": {
+              "ph": 6.2,
+              "k": 100,
+              "p": 28,
+              "n": 2.0,
+              "zn": 1.8,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Marsabit": {
+              "ph": 6.7,
+              "k": 161,
+              "p": 9,
+              "n": 0.09,
+              "zn": 2.9,
+              "s": 7,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Isiolo": {
+              "ph": 6.2,
+              "k": 100,
+              "p": 28,
+              "n": 2.0,
+              "zn": 1.8,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Meru": {
+              "ph": 5.8,
+              "k": 245,
+              "p": 31,
+              "n": 0.19,
+              "zn": 2.2,
+              "s": 7,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Tharaka - Nithi": {
+              "ph": 6.2,
+              "k": 100,
+              "p": 28,
+              "n": 2.0,
+              "zn": 1.8,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Embu": {
+              "ph": 5.4,
+              "k": 240,
+              "p": 22,
+              "n": 0.17,
+              "zn": 2.4,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Kitui": {
+              "ph": 6.1,
+              "k": 200,
+              "p": 11,
+              "n": 0.11,
+              "zn": 3.1,
+              "s": 8,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Machakos": {
+              "ph": 5.8,
+              "k": 200,
+              "p": 23,
+              "n": 0.1,
+              "zn": 3.4,
+              "s": 7,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Makueni": {
+              "ph": 6.2,
+              "k": 174,
+              "p": 19,
+              "n": 0.09,
+              "zn": 0.9,
+              "s": 11,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Nyandarua": {
+              "ph": 5.2,
+              "k": 224,
+              "p": 39,
+              "n": 0.2,
+              "zn": 2.8,
+              "s": 6,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Nyeri": {
+              "ph": 5.2,
+              "k": 244,
+              "p": 39,
+              "n": 0.16,
+              "zn": 2.3,
+              "s": 5,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Kirinyaga": {
+              "ph": 6.5,
+              "k": 220,
+              "p": 37,
+              "n": 0.17,
+              "zn": 2.5,
+              "s": 11,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Murang'A": {
+              "ph": 6.2,
+              "k": 100,
+              "p": 28,
+              "n": 2.0,
+              "zn": 1.8,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Kiambu": {
+              "ph": 5.5,
+              "k": 256,
+              "p": 32,
+              "n": 0.2,
+              "zn": 1.0,
+              "s": 12,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Turkana": {
+              "ph": 6.2,
+              "k": 100,
+              "p": 28,
+              "n": 2.0,
+              "zn": 1.8,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "West Pokot": {
+              "ph": 6.2,
+              "k": 100,
+              "p": 28,
+              "n": 2.0,
+              "zn": 1.8,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Samburu": {
+              "ph": 6.2,
+              "k": 100,
+              "p": 28,
+              "n": 2.0,
+              "zn": 1.8,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Trans Nzoia": {
+              "ph": 5.9,
+              "k": 273,
+              "p": 38,
+              "n": 0.22,
+              "zn": 2.3,
+              "s": 9,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Uasin Gishu": {
+              "ph": 5.8,
+              "k": 256,
+              "p": 39,
+              "n": 0.2,
+              "zn": 2.6,
+              "s": 5,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Elgeyo Marakwet": {
+              "ph": 6.2,
+              "k": 100,
+              "p": 28,
+              "n": 2.0,
+              "zn": 1.8,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Nandi": {
+              "ph": 5.7,
+              "k": 223,
+              "p": 34,
+              "n": 0.18,
+              "zn": 3.3,
+              "s": 9,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Baringo": {
+              "ph": 6.2,
+              "k": 100,
+              "p": 28,
+              "n": 2.0,
+              "zn": 1.8,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Laikipia": {
+              "ph": 6.2,
+              "k": 100,
+              "p": 28,
+              "n": 2.0,
+              "zn": 1.8,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Nakuru": {
+              "ph": 6.2,
+              "k": 100,
+              "p": 28,
+              "n": 2.0,
+              "zn": 1.8,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Narok": {
+              "ph": 6.2,
+              "k": 100,
+              "p": 28,
+              "n": 2.0,
+              "zn": 1.8,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Kajiado": {
+              "ph": 6.2,
+              "k": 100,
+              "p": 28,
+              "n": 2.0,
+              "zn": 1.8,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Keroka": {
+              "ph": 6.2,
+              "k": 100,
+              "p": 28,
+              "n": 2.0,
+              "zn": 1.8,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Kisii": {
+              "ph": 5.4,
+              "k": 230,
+              "p": 25,
+              "n": 0.17,
+              "zn": 2.9,
+              "s": 6,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Migori": {
+              "ph": 5.8,
+              "k": 181,
+              "p": 18,
+              "n": 0.16,
+              "zn": 2.1,
+              "s": 7,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Homa Bay": {
+              "ph": 6.2,
+              "k": 100,
+              "p": 28,
+              "n": 2.0,
+              "zn": 1.8,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Kisumu": {
+              "ph": 6.6,
+              "k": 209,
+              "p": 26,
+              "n": 0.13,
+              "zn": 1.2,
+              "s": 6,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Siaya": {
+              "ph": 5.7,
+              "k": 185,
+              "p": 27,
+              "n": 0.12,
+              "zn": 2.8,
+              "s": 9,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Busia": {
+              "ph": 6.2,
+              "k": 100,
+              "p": 28,
+              "n": 2.0,
+              "zn": 1.8,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Kakamega": {
+              "ph": 4.8,
+              "k": 180,
+              "p": 29,
+              "n": 0.17,
+              "zn": 0.9,
+              "s": 10,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Vihiga": {
+              "ph": 4.7,
+              "k": 219,
+              "p": 25,
+              "n": 0.12,
+              "zn": 1.9,
+              "s": 9,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Bungoma": {
+              "ph": 5.2,
+              "k": 192,
+              "p": 30,
+              "n": 0.19,
+              "zn": 3.5,
+              "s": 6,
+              "moisture": 20,
+              "texture": "Loam"
+            },
+            "Nyamira": {
+              "ph": 5.1,
+              "k": 214,
+              "p": 34,
+              "n": 0.14,
+              "zn": 2.1,
+              "s": 8,
+              "moisture": 20,
+              "texture": "Loam"
+            }
+          }
+
+
+    function fetchSoilByLocation() {
+      let c = document.getElementById("county").value;
+      let soil = exampleSoilStats[c] || {"ph":6.3,"k":112,"p":27,"n":2,"zn":2,"s":10,"moisture":20,"texture":"Loam"};
+      document.getElementById("soil_ph").value = soil.ph;
+      document.getElementById("soil_k").value = soil.k;
+      document.getElementById("soil_p").value = soil.p;
+      document.getElementById("soil_n").value = soil.n;
+      document.getElementById("soil_zn").value = soil.zn;
+      document.getElementById("soil_s").value = soil.s;
+      document.getElementById("soil_moisture").value = soil.moisture;
+      document.getElementById("soil_texture").value = soil.texture;
+    }
+
+    document.getElementById("county").addEventListener('change', fetchSoilByLocation);
+
+    // Handle form submission
+    function submitLocationForm(e){
+      e.preventDefault();
+      const county = document.getElementById("county").value;
+      const season = document.getElementById("season").value;
+      const soilcolor = document.getElementById("soilcolor").value;
+      if(!county || !season || !soilcolor){
+        document.getElementById("locationError").innerHTML = "Please fill all location and soil color options.";
+        return false;
+      }
+      document.getElementById("locationError").innerHTML = "Getting recommendations...";
+      fetchSoilByLocation();
+      // Simulating model call, replace with real API/deployment connection in prod
+      setTimeout(()=>predictCrops({county,season,soilcolor}),700);
+      return false;
+    }
+
+    // ------------------- Prediction Model Stub --------------------
+    // For real use: call flask backend /predict
+    function predictCrops(input){
+      // Generate random top predictions (demo)
+      let crops = [
+        {crop:"Maize",img:"https://cdn.jsdelivr.net/gh/openai/resources/flavours/maize.jpg",desc:"High yielding, staple food"},
+        {crop:"Beans",img:"https://cdn.jsdelivr.net/gh/openai/resources/flavours/beans.jpg",desc:"Nutritious legume, fixes nitrogen"},
+        {crop:"Potato",img:"https://cdn.jsdelivr.net/gh/openai/resources/flavours/potato.jpg",desc:"Root tuber, high demand"},
+        {crop:"Wheat",img:"https://cdn.jsdelivr.net/gh/openai/resources/flavours/wheat.jpg",desc:"Bread, flour, staple"},
+        {crop:"Sorghum",img:"https://cdn.jsdelivr.net/gh/openai/resources/flavours/sorghum.jpg",desc:"Drought tolerant, multipurpose"}
+      ];
+      let selected = [crops[Math.floor(Math.random()*crops.length)]];
+      while(selected.length<3){
+        let c = crops[Math.floor(Math.random()*crops.length)];
+        if(!selected.find(t=>t.crop==c.crop))selected.push(c);
+      }
+      let probs = [
+        Math.floor(50+Math.random()*30),
+        Math.floor(20+Math.random()*15),
+        100
+      ];
+      probs[2]=100-probs[0]-probs[1];
+      let out = ``;
+      selected.forEach((t,i)=> {
+        out += `<div class="bg-green-100 border-2 border-green-500 rounded-lg p-4 shadow text-center">
+          <img src="${t.img}" onerror="this.src='https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f33e.png'" class="mx-auto w-16 h-16 rounded-full border mb-2" alt="${t.crop}">
+          <div class="text-xl font-semibold text-green-800 mb-1">${t.crop}</div>
+          <div class="text-lg text-green-700 font-bold mb-2">${probs[i]}%</div>
+          <ul class="text-sm text-left mb-3">
+            <li><span class="fas fa-check text-green-700"></span> Recommended for your region</li>
+            <li><span class="fas fa-check text-green-700"></span> High market demand</li>
+            <li><span class="fas fa-check text-green-700"></span> Suitable for current soil conditions</li>
+          </ul>
+          <a href="javascript:void(0)" onclick="showCropDetails('${t.crop}')" class="text-green-800 font-medium underline">Crop properties &amp; management &rarr;</a>
+        </div>`;
+      });
+      document.getElementById("cropResults").innerHTML = out;
+      document.getElementById("locationError").innerHTML = "";
+    }
+    // ------------------- End Prediction Model Stub --------------------
+
+    // Crop details (stub)
+    const cropDetailsDB = {
+      "Maize": {
+        img:"https://cdn.jsdelivr.net/gh/openai/resources/flavours/maize.jpg",
+        "Ideal pH":"5.5-7.0", "Optimal Rainfall":"800-1200mm",
+        "Planting":"75cm row, 25cm plant; one seed per hole.",
+        "Top Varieties":"H614D Hybrid, DK8031",
+        "Major regions":"Trans Nzoia, Uasin Gishu, Bomet",
+        "Inputs":"Certified seed, DAP/CAN, pesticides"
+      },
+      "Beans": {
+        img:"https://cdn.jsdelivr.net/gh/openai/resources/flavours/beans.jpg",
+        "Ideal pH":"5.8-6.5", "Optimal Rainfall":"900-1200mm",
+        "Planting":"50cm row, 10cm plant.",
+        "Top Varieties":"Rosecoco, Mwitemania",
+        "Major regions":"Western, Rift Valley, Nyanza",
+        "Inputs":"Clean seed, inoculants, NPK fertilizer"
+      },
+      "Potato":{
+        img:"https://cdn.jsdelivr.net/gh/openai/resources/flavours/potato.jpg",
+        "Ideal pH":"5.5-6.5", "Optimal Rainfall":"900-1400mm",
+        "Planting":"75x30cm, certified seed tubers.",
+        "Top Varieties":"Shangi, Tigoni",
+        "Major regions":"Nakuru, Nyandarua, Meru",
+        "Inputs":"Seed tubers, blended fertilizer, fungicides"
+      },
+      "Wheat":{
+        img: "https://cdn.jsdelivr.net/gh/openai/resources/flavours/wheat.jpg",
+        "Ideal pH":"6.0-7.0", "Optimal Rainfall":"1000-1200mm",
+        "Planting":"Broadcast or 20-25cm drill.",
+        "Top Varieties":"Robin, Njoro BW2",
+        "Major regions":"Nakuru, Narok, Uasin Gishu",
+        "Inputs":"Certified seed, NPK/DAP, foliar feed"
+      },
+      "Sorghum":{
+        img:"https://cdn.jsdelivr.net/gh/openai/resources/flavours/sorghum.jpg",
+        "Ideal pH":"5.0-7.0", "Optimal Rainfall":"400-600mm",
+        "Planting":"60cm row, 15cm plant; 4cm deep.",
+        "Top Varieties":"Serena, Gadam",
+        "Major regions":"Eastern, Nyanza, Lower Rift",
+        "Inputs":"Seed, fertilizer, herbicides"
+      }
+    };
+    function showCropDetails(crop){
+      let d=cropDetailsDB[crop]||null;
+      if(!d)return;
+      let img = `<img src="${d.img||''}" onerror="this.src='https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f33e.png'" class="mx-auto w-24 h-24 rounded shadow mb-2" alt="${crop}">`;
+      let ul = `<ul class="list-disc ml-6 text-sm mb-4">
+        <li><b>Ideal pH:</b> ${d["Ideal pH"]||""} | <b>Optimal Rainfall:</b> ${d["Optimal Rainfall"]||""}</li>
+        <li><b>Planting:</b> ${d["Planting"]||""}</li>
+        <li><b>Top Varieties:</b> ${d["Top Varieties"]||""}</li>
+        <li><b>Major regions:</b> ${d["Major regions"]||""}</li>
+        <li><b>Common inputs:</b> ${d["Inputs"]||""}</li>
+      </ul>`;
+      let link = `<span class="text-green-700 font-semibold">See <a href="#vendors" class="underline">vendors</a> below for where to buy inputs.</span>`;
+      document.getElementById("cropDetailsContent").innerHTML = `<h2 class="text-xl font-bold text-green-800 flex items-center mb-2"><span class="fas fa-seedling text-2xl mr-2"></span>${crop}</h2>${img}<div>${ul}${link}</div>`;
+      document.getElementById("cropDetailsModal").classList.remove('hidden');
+    }
+    function closeCropDetails(){ document.getElementById("cropDetailsModal").classList.add('hidden'); }
+
+    // ------------------- Vendor Marketplace Demo -----------------
+    // Replace with backend source in production
+    const demoVendors = [
+      {name:"Uasin FarmAgro", product:"Seeds", location:"Uasin Gishu", contact:"0722123456", hours:"8am-5pm"},
+      {name:"GreenLeaf Nakuru", product:"Fertilizers", location:"Nakuru", contact:"0733123123", hours:"8am-6pm"},
+      {name:"Nyeri Agrovet", product:"Pesticides", location:"Nyeri", contact:"0707771122", hours:"8am-6pm"},
+      {name:"Bomet Power Equip", product:"Equipment", location:"Bomet", contact:"0722555777", hours:"9am-5pm"},
+      {name:"SeedX Nairobi", product:"Seeds", location:"Nairobi", contact:"0700123777", hours:"8am-4pm"}
+    ];
+    function filterVendors(){
+      let prod = document.getElementById("vendorProduct").value;
+      let loc = document.getElementById("vendorCounty").value;
+      let data = demoVendors.filter(v=>
+        (!prod||v.product==prod)&&(!loc||v.location==loc)
+      );
+      let out = data.length ? '' : '<p class="text-gray-500">No vendors found for this filter.</p>';
+      data.forEach(v=>{
+        out += `<div class="flex items-center border-b py-2 px-2">
+                  <div class="flex-1 font-semibold text-green-800">${v.name}</div>
+                  <div class="w-28">${v.product}</div>
+                  <div class="w-28"><span class="fas fa-map-marker-alt"></span> ${v.location}</div>
+                  <div class="w-32"><span class="fas fa-phone"></span> ${v.contact}</div>
+                  <div class="hidden md:block w-32">${v.hours}</div>
+                </div>`;
+      });
+      document.getElementById("vendorMarketplace").innerHTML = out;
+    }
+    filterVendors();
+
+    // ------------- Auth Modal --------------
+    function openAuth(mode){
+      document.getElementById("authModal").classList.remove('hidden');
+      if(mode=="login") renderLoginForm();
+      else renderRegisterForm();
+    }
+    function closeAuth(){
+      document.getElementById("authModal").classList.add('hidden');
+    }
+    // OTP simulation (1: send code, 2: verify)
+    let sentOTP = {};
+    function renderLoginForm(){
+      document.getElementById("authContent").innerHTML = `
+        <h2 class="text-2xl text-green-800 font-bold mb-2">Login</h2>
+        <div id="loginStep1"><form onsubmit="return sendLoginOTP(event)">
+          <label class="form-label mb-1">Phone Number</label>
+          <input id="loginPhone" required pattern="^0[0-9]{9}$" class="form-control w-full border px-3 py-2 rounded mb-3" placeholder="07XXXXXXXX">
+          <button type="submit" class="bg-green-700 text-white px-5 py-2 rounded hover:bg-green-800">Send OTP</button>
+          </form></div>
+        <div id="loginStep2" style="display:none;">
+          <form onsubmit="return verifyLoginOTP(event)">
+            <label class="form-label mb-1">Enter OTP</label>
+            <input id="loginOTP" required maxlength="6" class="form-control w-full border px-3 py-2 rounded mb-3" placeholder="Enter 6-digit code">
+            <input type="hidden" id="loginPhoneHidden">
+            <button type="submit" class="bg-green-700 text-white px-5 py-2 rounded hover:bg-green-800">Login</button>
+          </form>
+        </div>
+        <div id="loginErr" class="text-red-600 font-semibold mt-2"></div>
+      `;
+    }
+    function sendLoginOTP(e){e.preventDefault();
+      let ph = document.getElementById("loginPhone").value;
+      if(!/^0[0-9]{9}$/.test(ph)){document.getElementById("loginErr").innerText="Enter valid phone number.";return false;}
+      // stub: accept any phone, send code
+      let code=Math.floor(100000+Math.random()*900000)+'';
+      sentOTP[ph]=code;
+      document.getElementById("loginErr").innerText="OTP sent: "+code+" (demo: code shown for demo)";
+      document.getElementById("loginPhoneHidden").value=ph;
+      document.getElementById("loginStep1").style.display='none';
+      document.getElementById("loginStep2").style.display='block';
+      return false;
+    }
+    function verifyLoginOTP(e){e.preventDefault();
+      let ph = document.getElementById("loginPhoneHidden").value;
+      let code = document.getElementById("loginOTP").value;
+      if(sentOTP[ph] && code===sentOTP[ph]){
+        document.getElementById("loginErr").innerText="Login successful!";
+        setTimeout(()=>{ closeAuth(); }, 900);
+      } else {
+        document.getElementById("loginErr").innerText="Invalid OTP. Try again.";
+      }
+      return false;
+    }
+    function renderRegisterForm(){
+      document.getElementById("authContent").innerHTML = `
+        <h2 class="text-2xl text-green-800 font-bold mb-2">Register</h2>
+        <div id="regStep1"><form onsubmit="return sendRegOTP(event)">
+          <label class="form-label mb-1">Full Name</label>
+          <input id="regName" required class="form-control w-full border px-3 py-2 rounded mb-3" placeholder="Your Name">
+          <label class="form-label mb-1">Phone Number</label>
+          <input id="regPhone" required pattern="^0[0-9]{9}$" class="form-control w-full border px-3 py-2 rounded mb-3" placeholder="07XXXXXXXX">
+          <label class="form-label mb-1">County</label>
+          <select required id="regCounty" class="form-control w-full border px-3 py-2 rounded mb-3">
+            <option value="">--Select County--</option>
+            ${countyList.map(c=>`<option>${c}</option>`).join("")}
+          </select>
+          <button type="submit" class="bg-green-700 text-white px-5 py-2 rounded hover:bg-green-800">Send OTP</button>
+        </form></div>
+        <div id="regStep2" style="display:none;">
+          <form onsubmit="return verifyRegOTP(event)">
+            <label class="form-label mb-1">Enter OTP</label>
+            <input id="regOTP" required maxlength="6" class="form-control w-full border px-3 py-2 rounded mb-3" placeholder="Enter 6-digit code">
+            <input type="hidden" id="regNameHidden">
+            <input type="hidden" id="regPhoneHidden">
+            <input type="hidden" id="regCountyHidden">
+            <button type="submit" class="bg-green-700 text-white px-5 py-2 rounded hover:bg-green-800">Register</button>
+          </form>
+        </div>
+        <div id="regErr" class="text-red-600 font-semibold mt-2"></div>
+      `;
+    }
+    function sendRegOTP(e){e.preventDefault();
+      let ph = document.getElementById("regPhone").value;
+      let name = document.getElementById("regName").value;
+      let county = document.getElementById("regCounty").value;
+      if(!/^0[0-9]{9}$/.test(ph)||!name||!county){
+        document.getElementById("regErr").innerText="Please fill all fields with accurate information.";
+        return false;
+      }
+      let code=Math.floor(100000+Math.random()*900000)+'';
+      sentOTP[ph]=code;
+      document.getElementById("regErr").innerText="OTP sent: "+code+" (demo: code shown for demo)";
+      document.getElementById("regNameHidden").value=name;
+      document.getElementById("regPhoneHidden").value=ph;
+      document.getElementById("regCountyHidden").value=county;
+      document.getElementById("regStep1").style.display='none';
+      document.getElementById("regStep2").style.display='block';
+      return false;
+    }
+    function verifyRegOTP(e){e.preventDefault();
+      let ph = document.getElementById("regPhoneHidden").value;
+      let code = document.getElementById("regOTP").value;
+      if(sentOTP[ph] && code===sentOTP[ph]){
+        document.getElementById("regErr").innerText="Registration successful!";
+        setTimeout(()=>{ closeAuth(); }, 900);
+      } else {
+        document.getElementById("regErr").innerText="Invalid OTP. Try again.";
+      }
+      return false;
+    }
+  </script>
+  <script>
+    function openAuth(mode) {
+      document.getElementById('authModal').classList.remove('hidden');
+      document.getElementById('authTitle').innerText = mode === 'login' ? 'Login' : 'Register';
+    }
+  
+    function closeAuth() {
+      document.getElementById('authModal').classList.add('hidden');
+    }
+  
+    async function sendOtp() {
+      const method = document.getElementById('authMethod').value;
+      const id = document.getElementById('identifier').value;
+  
+      const res = await fetch('/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ method, id })
+      });
+  
+      const data = await res.json();
+      alert(data.message);
+      document.getElementById('otpSection').classList.remove('hidden');
+    }
+  
+    document.getElementById('authForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const method = document.getElementById('authMethod').value;
+      const id = document.getElementById('identifier').value;
+      const pass = document.getElementById('password').value;
+      const otp = document.getElementById('otp').value;
+  
+      const res = await fetch('/register-or-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ method, id, password: pass, otp })
+      });
+  
+      const data = await res.json();
+      if (data.success) {
+        alert("Welcome!");
+        closeAuth();
+      } else {
+        alert(data.message || "Authentication failed");
+      }
+    });
+  </script>
+  <script>
+    async function getLocation() {
+      if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser.");
+        return;
+      }
+    
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+    
+        const apiKey = '7af4915dede64109b1001badbf54b0f7';
+        const url = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${apiKey}`;
+    
+        try {
+          const res = await fetch(url);
+          const data = await res.json();
+          console.log("OpenCage result:", data); // 👈 Add this
+    
+          if (data?.results?.length) {
+            const comp = data.results[0].components;
+            const county = comp.county || comp.state;
+            const subcounty = comp.suburb || comp.town || comp.village;
+            console.log("Parsed location:", { county, subcounty }); // 👈 Add this
+    
+            // Make sure county dropdown is already populated
+            document.getElementById('county').value = county;
+            updateSubcounties();
+    
+            setTimeout(() => {
+              document.getElementById('subcounty').value = subcounty;
+              updateConstituencies();
+            }, 400);
+          } else {
+            alert("Could not detect county from your location.");
+          }
+        } catch (err) {
+          console.error("Fetch error:", err);
+          alert("Failed to retrieve location data.");
+        }
+      }, () => {
+        alert("Unable to retrieve your location.");
+      });
+    }
+    
+    </script>
+    
+      <script>
+        // Data structure for all counties, subcounties, and constituencies
+        const locationData = {
+          "Mombasa": {
+            "Changamwe": ["Port Reitz", "Kipevu", "Airport", "Changamwe", "Chaani"],
+            "Jomvu": ["Jomvu Kuu", "Miritini", "Mikindani"],
+            "Kisauni": ["Mjambere", "Junda", "Bamburi", "Mwakirunge", "Mtopanga", "Magogoni", "Shanzu"],
+            "Nyali": ["Frere Town", "Ziwa La Ng'Ombe", "Mkomani", "Kongowea", "Kadzandani"],
+            "Likoni": ["Mtongwe", "Shika Adabu", "Bofu", "Likoni", "Timbwani"],
+            "Mvita": ["Mji Wa Kale/Makadara", "Tudor", "Tononoka", "Shimanzi/Ganjoni", "Majengo"]
+          },
+          "Kwale": {
+            "Msambweni": ["Gombato Bongwe", "Ukunda", "Kinondo", "Ramisi"],
+            "Lungalunga": ["Pongwe/Kikoneni", "Dzombo", "Mwereni", "Vanga"],
+            "Matuga": ["Tsima Golini", "Waa", "Tiwi", "Kubo South", "Mkongani"],
+            "Kinango": ["Ndavaya", "Puma", "Kinango", "Mackinnon Road", "Chengoni/Samburu", "Mwavumbo", "Kasemeni"]
+          },
+          "Kilifi": {
+            "Kilifi North": ["Tezo", "Sokoni", "Dabaso", "Matsangoni", "Watamu", "Mtopanga", "Magogoni", "Shanzu"],
+            "Kilifi South": ["Junju", "Mwarakaya", "Shimo La Tewa", "Chasimba", "Mtepeni"],
+            "Kaloleni": ["Mariakani", "Kayafungo", "Kaloleni", "Mwanamwinga"],
+            "Rabai": ["Mwawesa", "Ruruma", "Kambe/Ribe", "Rabai/Kisurutini"],
+            "Ganze": ["Ganze", "Bamba", "Jaribuni", "Sokoke"],
+            "Malindi": ["Jilore", "Kakuyuni", "Ganda", "Malindi Town", "Shella"],
+            "Magarini": ["Marafa", "Magarini", "Gongoni", "Adu", "Garashi", "Sabaki"]
+          },
+          "Tana River": {
+            "Garsen": ["Kipini East", "Garsen South", "Kipini West", "Garsen Central", "Garsen West", "Garsen North"],
+            "Galole": ["Kinakomba", "Mikinduni", "Chewani", "Wayu"],
+            "Bura": ["Chewele", "Hirimani", "Bangale", "Sala", "Madogo"]
+          },
+          "Lamu": {
+            "Lamu East": ["Faza", "Kiunga", "Basuba"],
+            "Lamu West": ["Shella", "Mkomani", "Hindi", "Mkunumbi", "Hongwe", "Witu", "Bahari"]
+          },
+          "Taita Taveta": {
+            "Taveta": ["Chala", "Mahoo", "Bomani", "Mboghoni", "Mata"],
+            "Wundanyi": ["Wundanyi/Mbale", "Werugha", "Wumingu/Kishushe", "Mwanda/Mgange"],
+            "Mwatate": ["Rong'E", "Mwatate", "Bura", "Chawia", "Wusi/Kishamba"],
+            "Voi": ["Mbololo", "Sagalla", "Kaloleni", "Marungu", "Kasigau", "Ngolia"]
+          },
+          "Garissa": {
+            "Garissa Township": ["Waberi", "Galbet", "Township", "Iftin"],
+            "Balambala": ["Balambala", "Danyere", "Jara Jara", "Saka", "Sankuri"],
+            "Lagdera": ["Modogashe", "Benane", "Goreale", "Maalimin", "Sabena", "Baraki"],
+            "Dadaab": ["Dertu", "Dadaab", "Labasigale", "Damajale", "Liboi", "Abakaile"],
+            "Fafi": ["Bura", "Dekaharia", "Jarajila", "Fafi", "Nanighi"],
+            "Ijara": ["Hulugho", "Sangailu", "Ijara", "Masalani"]
+          },
+          "Wajir": {
+            "Wajir North": ["Gurar", "Bute", "Korondile", "Malkagufu", "Batalu", "Danaba", "Godoma"],
+            "Wajir East": ["Wagberi", "Township", "Barwago", "Khorof/Harar"],
+            "Tarbaj": ["Elben", "Sarman", "Tarbaj", "Wargadud"],
+            "Wajir West": ["Arbajahan", "Hadado/Athibohol", "Adamasajide", "Ganyure/Wagalla"],
+            "Eldas": ["Eldas", "Della", "Lakoley South/Basir", "Elnur/Tula Tula"],
+            "Wajir South": ["Benane", "Burder", "Dadaja Bulla", "Habasswein", "Lagboghol South", "Ibrahim Ure", "Diif"]
+          },
+          "Mandera": {
+            "Mandera West": ["Takaba South", "Takaba", "Lagsure", "Dandu", "Gither"],
+            "Banissa": ["Banissa", "Derkhale", "Guba", "Malkamari", "Kiliwehiri"],
+            "Mandera North": ["Ashabito", "Guticha", "Morothile", "Rhamu", "Rhamu-Dimtu"],
+            "Mandera South": ["Wargadud", "Kutulo", "Elwak South", "Elwak North", "Shimbir Fatuma"],
+            "Mandera East": ["Arabia", "Township", "Neboi", "Khalalio", "Libehia"],
+            "Lafey": ["Sala", "Fino", "Lafey", "Waranqara", "Alango Gof"]
+          },
+          "Marsabit": {
+            "Moyale": ["Butiye", "Sololo", "Heillu/Manyatta", "Golbo", "Moyale Township", "Uran", "Obbu"],
+            "North Horr": ["Dukana", "Maikona", "Turbi", "North Horr", "Illeret"],
+            "Saku": ["Sagante/Jaldessa", "Karare", "Marsabit Central"],
+            "Laisamis": ["Loiyangalani", "Kargi/South Horr", "Korr/Ngurunit", "Logo Logo", "Laisamis"]
+          },
+          "Isiolo": {
+            "Isiolo North": ["Wabera", "Bulla Pesa", "Chari", "Cherab", "Ngare Mara", "Burat", "Oldo/Nyiro"],
+            "Isiolo South": ["Garbatulla", "Kinna", "Sericho"]
+          },
+          "Meru": {
+            "Igembe South": ["Maua", "Kiegoi/Antubochiu", "Athiru Gaiti", "Akachiu", "Kanuni"],
+            "Igembe Central": ["Akirang'Ondu", "Athiru Ruujine", "Igembe East", "Njia", "Kangeta"],
+            "Igembe North": ["Antuambui", "Ntunene", "Antubetwe Kiongo", "Naathu", "Amwathi"],
+            "Tigania West": ["Athwana", "Akithii", "Kianjai", "Nkomo", "Mbeu"],
+            "Tigania East": ["Thangatha", "Mikinduri", "Kiguchwa", "Muthara", "Karama"],
+            "North Imenti": ["Municipality", "Ntima East", "Ntima West", "Nyaki West", "Nyaki East"],
+            "Buuri": ["Timau", "Kisima", "Kiirua/Naari", "Ruiri/Rwarera", "Kibirichia"],
+            "Central Imenti": ["Mwang'Anthia", "Abothuguchi Central", "Abothuguchi West", "Kiagu"],
+            "South Imenti": ["Mitunguu", "Igoji East", "Igoji West", "Abogeta East", "Abogeta West", "Nkuene"]
+          },
+          "Tharaka - Nithi": {
+            "Maara": ["Mitheru", "Muthambi", "Mwimbi", "Ganga", "Chogoria"],
+            "Chuka/Igambang'ombe": ["Mariani", "Karingani", "Magumoni", "Mugwe", "Igambang'ombe"],
+            "Tharaka": ["Gatunga", "Mukothima", "Nkondi", "Chiakariga", "Marimanti"]
+          },
+          "Embu": {
+            "Manyatta": ["Ruguru/Ngandori", "Kithimu", "Nginda", "Mbeti North", "Kirimari", "Gaturi South"],
+            "Runyenjes": ["Gaturi North", "Kagaari South", "Central Ward", "Kagaari North", "Kyeni North", "Kyeni South"],
+            "Mbeere South": ["Mwea", "Makima", "Mbeti South", "Mavuria", "Kiambere"],
+            "Mbeere North": ["Nthawa", "Muminji", "Evurore"]
+          },
+          "Kitui": {
+            "Mwingi North": ["Ngomeni", "Kyuso", "Mumoni", "Tseikuru", "Tharaka"],
+            "Mwingi West": ["Kyome/Thaana", "Nguutani", "Migwani", "Kiomo/Kyethani"],
+            "Mwingi Central": ["Central", "Kivou", "Nguni", "Nuu", "Mui", "Waita"],
+            "Kitui West": ["Mutonguni", "Kauwi", "Matinyani", "Kwa Mutonga/Kithumula"],
+            "Kitui Rural": ["Kisasi", "Mbitini", "Kavonza/Yatta", "Kanyangi"],
+            "Kitui Central": ["Miambani", "Township", "Kyangwithya West", "Mulango", "Kyangwithya East"],
+            "Kitui East": ["Zombe/Mwitika", "Nzambani", "Chuluni", "Voo/Kyamatu", "Endau/Malalani", "Mutito/Kaliku"],
+            "Kitui South": ["Ikanga/Kyatune", "Mutomo", "Mutha", "Ikutha", "Kanziko", "Athi"]
+          },
+          "Machakos": {
+            "Masinga": ["Kivaa", "Masinga Central", "Ekalakala", "Muthesya", "Ndithini"],
+            "Yatta": ["Ndalani", "Matuu", "Kithimani", "Ikombe", "Katangi"],
+            "Kangundo": ["Kangundo North", "Kangundo Central", "Kangundo East", "Kangundo West"],
+            "Matungulu": ["Tala", "Matungulu North", "Matungulu East", "Matungulu West", "Kyeleni"],
+            "Kathiani": ["Mitaboni", "Kathiani Central", "Upper Kaewa/Iveti", "Lower Kaewa/Kaani"],
+            "Mavoko": ["Athi River", "Kinanie", "Muthwani", "Syokimau/Mulongo"],
+            "Machakos Town": ["Kalama", "Mua", "Mutituni", "Machakos Central", "Mumbuni North", "Muvuti/Kiima-Kimwe", "Kola"],
+            "Mwala": ["Mbiuni", "Makutano/Mwala", "Masii", "Muthetheni", "Wamunyu", "Kibauni"]
+          },
+          "Makueni": {
+            "Mbooni": ["Tulimani", "Mbooni", "Kithungo/Kitundu", "Kiteta/Kisau", "Waia-Kako", "Kalawa"],
+            "Kilome": ["Kasikeu", "Mukaa", "Kiima Kiu/Kalanzoni"],
+            "Kaiti": ["Ukia", "Kee", "Kilungu", "Ilima"],
+            "Makueni": ["Wote", "Muvau/Kikuumini", "Mavindini", "Kitise/Kithuki", "Kathonzweni", "Nzaui/Kilili/Kalamba", "Mbitini"],
+            "Kibwezi West": ["Makindu", "Nguumo", "Kikumbulyu North", "Kikumbulyu South", "Nguu/Masumba", "Emali/Mulala"],
+            "Kibwezi East": ["Masongaleni", "Mtito Andei", "Thange", "Ivingoni/Nzambani"]
+          },
+          "Nyandarua": {
+            "Kinangop": ["Engineer", "Gathara", "North Kinangop", "Murungaru", "Njabini\\Kiburu", "Nyakio", "Githabai", "Magumu"],
+            "Kipipiri": ["Wanjohi", "Kipipiri", "Geta", "Githioro"],
+            "Ol Kalou": ["Karau", "Kanjuiri Range", "Mirangine", "Kaimbaga", "Rurii"],
+            "Ol Jorok": ["Gathanji", "Gatimu", "Weru", "Charagita"],
+            "Ndaragwa": ["Leshau/Pondo", "Kiriita", "Central", "Shamata"]
+          },
+          "Nyeri": {
+            "Tetu": ["Dedan Kimanthi", "Wamagana", "Aguthi-Gaaki"],
+            "Kieni": ["Mweiga", "Naromoru Kiamathaga", "Mwiyogo/Endarasha", "Mugunda", "Gatarakwa", "Thegu River", "Kabaru", "Gakawa"],
+            "Mathira": ["Ruguru", "Magutu", "Iraini", "Konyu", "Kirimukuyu", "Karatina Town"],
+            "Othaya": ["Mahiga", "Iria-Ini", "Chinga", "Karima"],
+            "Mukurweini": ["Gikondi", "Rugi", "Mukurwe-Ini West", "Mukurwe-Ini Central"],
+            "Nyeri Town": ["Kiganjo/Mathari", "Rware", "Gatitu/Muruguru", "Ruring'U", "Kamakwa/Mukaro"]
+          },
+          "Kirinyaga": {
+            "Mwea": ["Mutithi", "Kangai", "Thiba", "Wamumu", "Nyangati", "Murinduko", "Gathigiriri", "Tebere"],
+            "Gichugu": ["Kabare", "Baragwi", "Njukiini", "Ngariama", "Karumandi"],
+            "Ndia": ["Mukure", "Kiine", "Kariti"],
+            "Kirinyaga Central": ["Mutira", "Kanyekini", "Kerugoya", "Inoi"]
+          },
+          "Murang'A": {
+            "Kangema": ["Kanyenya-Ini", "Muguru", "Rwathia"],
+            "Mathioya": ["Gitugi", "Kiru", "Kamacharia"],
+            "Kiharu": ["Wangu", "Mugoiri", "Mbiri", "Township", "Murarandia", "Gaturi"],
+            "Kigumo": ["Kahumbu", "Muthithi", "Kigumo", "Kangari", "Kinyona"],
+            "Maragwa": ["Kimorori/Wempa", "Makuyu", "Kambiti", "Kamahuha", "Ichagaki", "Nginda"],
+            "Kandara": ["Ng'Araria", "Muruka", "Kagundu-Ini", "Gaichanjiru", "Ithiru", "Ruchu"],
+            "Gatanga": ["Ithanga", "Kakuzi/Mitubiri", "Mugumo-Ini", "Kihumbu-Ini", "Gatanga", "Kariara"]
+          },
+          "Kiambu": {
+            "Gatundu South": ["Kiamwangi", "Kiganjo", "Ndarugu", "Ngenda"],
+            "Gatundu North": ["Gituamba", "Githobokoni", "Chania", "Mang'U"],
+            "Juja": ["Murera", "Theta", "Juja", "Witeithie", "Kalimoni"],
+            "Thika Town": ["Township", "Kamenu", "Hospital", "Gatuanyaga", "Ngoliba"],
+            "Ruiru": ["Gitothua", "Biashara", "Gatongora", "Kahawa Sukari", "Kahawa Wendani", "Kiuu", "Mwiki", "Mwihoko"],
+            "Githunguri": ["Githunguri", "Githiga", "Ikinu", "Ngewa", "Komothai"],
+            "Kiambu": ["Ting'Ang'A", "Ndumberi", "Riabai", "Township"],
+            "Kiambaa": ["Cianda", "Karuri", "Ndenderu", "Muchatha", "Kihara"],
+            "Kabete": ["Gitaru", "Muguga", "Nyadhuna", "Kabete", "Uthiru"],
+            "Kikuyu": ["Karai", "Nachu", "Sigona", "Kikuyu", "Kinoo"],
+            "Limuru": ["Bibirioni", "Limuru Central", "Ndeiya", "Limuru East", "Ngecha Tigoni"],
+            "Lari": ["Kinale", "Kijabe", "Nyanduma", "Kamburu", "Lari/Kirenga"]
+          },
+          "Turkana": {
+            "Turkana North": ["Kaeris", "Lake Zone", "Lapur", "Kaaleng/Kaikor", "Kibish", "Nakalale"],
+            "Turkana West": ["Kakuma", "Lopur", "Letea", "Songot", "Kalobeyei", "Lokichoggio"],
+            "Turkana Central": ["Kang'Atotha", "Lodwar Township", "Kanamkemer"],
+            "Turkana East": ["Kolobia", "Kapedo/Napeitom"],
+            "Turkana South": ["Kalapata", "Katilu", "Lokichar"],
+            "Loima": ["Loima", "Lokiriama/Lorengai", "Kotaruk/Lorengai", "Kerio Delta"]
+          },
+          "West Pokot": {
+            "Kapenguria": ["Siyoi", "Riwo", "Municipality", "Endugh"],
+            "Sigor": ["Masol", "Sekerr", "Lomuke", "Weiwei"],
+            "Kacheliba": ["Suam", "Kasei", "Konyaon", "Kacheliba", "Chepareria"],
+            "Pokot South": ["Batei", "Lombeh", "Chepkorio"]
+          },
+          "Samburu": {
+            "Samburu West": ["Lodokejek", "Suguta Marmar", "Maralal", "Poro", "Loosuk"],
+            "Samburu North": ["Elbarta", "Nachola", "Nyiro", "Ndoto"],
+            "Samburu East": ["Waso", "Wamba East", "Wamba West", "Wamba North"]
+          },
+          "Trans Nzoia": {
+            "Kwanza": ["Kapomboi", "Kwanza", "Keiyo", "Biketi"],
+            "Endebes": ["Chepchoina", "Endebes", "Matisi", "Kinyoro"],
+            "Saboti": ["Saboti", "Mwatate", "Machinjir", "Kiminini", "Murundi"],
+            "Kiminini": ["Sinyerere", "Nalondo", "Matunda", "Kiminini", "Waitaluk"],
+            "Cherangany": ["Cherangany/Suwerwa", "Siuna", "Muserechi", "Mwea", "Moi'S Bridge"]
+          },
+          "Uasin Gishu": {
+            "Soy": ["Soy", "Kipsomba", "Ziwa", "Koiwa", "Segero/Barsombe"],
+            "Turbo": ["Naiberi", "Kapseret", "Megun", "Kiplombe", "Kamariny", "Kipkaren"],
+            "Ainabkoi": ["Ainabkoi/Olare", "Kapsoya", "Kipsomba"],
+            "Kapseret": ["Kapturo", "Kuinet/Kapsuswa", "Kapsao", "Tarakwa"],
+            "Kesses": ["Kaptel/Kiptullo", "Cheptil", "Chekaria", "Tumeyo"],
+            "Moiben": ["Kimumu", "Kapngetuny", "Sergoit", "Tarakwa"]
+          },
+          "Elgeyo Marakwet": {
+            "Marakwet East": ["Kapkagaon", "Tirap", "Koibos"],
+            "Marakwet West": ["Londiani", "Moiben Kuserwo", "Moiben/Chesongech", "Kamoi", "Sambaria"],
+            "Keiyo North": ["Kabarak", "Tambach", "Kesot", "Kamariny"],
+            "Keiyo South": ["Kaptarakwa", "Chepkorio", "Motioli", "Tambach", "Kiptuiya", "Kerio"]
+          },
+          "Nandi": {
+            "Tinderet": ["Nandi Hills", "Kipkaren", "Kipkeyo", "Kapng'Etuny"],
+            "Aldai": ["Kapsaos", "Kipkoim", "Chemalal", "Kapchorwa"],
+            "Nandi Hills": ["Kapbara", "Kapchere", "Cheptoyon", "Kimolong"],
+            "Chesumei": ["Lelem", "Kipworom", "Chebaru", "Mugunga", "Kapsengere"],
+            "Emgwen": ["Kapngetuny", "Kipchepton", "Kiplombe"],
+            "Mosop": ["Kaptarakwa", "Kapsabet", "Kesumet", "Kipkabur", "Kiptuiya"]
+          },
+          "Baringo": {
+            "Tiaty": ["Kologir", "Kang'Irangero", "Chepyuk", "Mogotio", "Ndanya"],
+            "Baringo North": ["Bartabwa", "Kabarnet", "Kabartonjo", "Moiben", "Kamok"],
+            "Baringo Central": ["Ewale", "Mugunga", "Mukurweini", "Kesumet"],
+            "Mogotio": ["Kerio Valley", "Kampi Ya Samaki", "Mogotio", "Salawa", "Eldoret East"],
+            "Baringo South": ["Maram", "Rongai", "Kiptoi", "Ndoga"]
+          },
+          "Laikipia": {
+            "Laikipia West": ["Rumuruti", "Ol-Moran", "Ndiriri", "Gatarakwa"],
+            "Laikipia North": ["Kimanjo", "Ol'Ng'Arua", "Suguta Marmar", "Bunyore", "Tigonyi"],
+            "Laikipia East": ["Ngobit", "Nanyuki", "Lamuria", "Thingithu"]
+          },
+          "Nakuru": {
+            "Naivasha": ["Hell'S Gate", "Maai Mahiu", "Karati", "Viwandani", "Humor", "Karagita"],
+            "Gilgil": ["Gilgil", "Murinduko", "Mbunde", "Kikopey"],
+            "Kuresoi South": ["Kiambiu", "Tenges", "Ndaragwa", "Morop", "Aror"],
+            "Kuresoi North": ["Kiptuiya", "Kampio", "Kipchui", "Ndathiru", "Kongasis", "Saboti"],
+            "Molo": ["Molo", "Mariashon", "Teret", "Talai", "Koyumot"],
+            "Njoro": ["Mau Narok", "Lare", "Kisiriri", "Ndiwa", "Mwitoti", "Mugoiri"],
+            "Rongai": ["Mosop", "Solai", "Suchai", "Kabazi", "Sirikwa"],
+            "Bahati": ["Wanyororu", "Lanet/Umbui", "Kabatini", "Lanet"],
+            "Subukia": ["Subukia", "Wanyororu", "Gathing'A", "Waldai"],
+            "Nakuru Town West": ["Shaaba", "Shalom", "Naivasha", "Rose Cottage", "Rhino"],
+            "Nakuru Town East": ["Nakuru Town", "Gitombo", "Burnt Forest", "Subukia"]
+          },
+          "Narok": {
+            "Narok North": ["Koyumot", "Suswa", "Narok Town", "Motok", "Olelshwa", "Kipkelion"],
+            "Narok East": ["Olelo Sokwan", "Pambo", "Kewapaki", "Naibor", "Olesoswa"],
+            "Narok South": ["Mbirikani", "Loita", "Majibu", "Eor Esiam"],
+            "Narok West": ["Mara", "Kimintet", "Olakewua", "Inkarakapot"],
+            "Transmara West": ["Kipkelion", "Kapsiru", "Moita"],
+            "Transmara East": ["Keyian", "Migori", "Kebelio", "Nyagawa"]
+          },
+          "Kajiado": {
+            "Kajiado North": ["Olkejuado", "Mosiro", "Ongata Rongai", "Ngong", "Kiserian"],
+            "Kajiado Central": ["Kimana", "Elmoli", "Imaror", "Mosiro", "Matapato South", "Olorropil"],
+            "Kajiado East": ["Kitengela", "Kisaju", "Imaror", "Maasai", "Kenyawa", "Katikati", "Endebess"],
+            "Kajiado West": ["Mosiro", "Olorropil", "Kimana", "Maasai", "Morijo"],
+            "Kajiado South": ["Loitokitok", "Kukiyang", "Kimana", "Mashuru", "Matapato South"]
+          },
+          "Kericho": {
+            "Ainamoi": ["Kipkelion East", "Kipkelion West", "Ainamoi"],
+            "Belgut": ["Belgut", "Kabianga", "Chepsonoi", "Kapkatet"],
+            "Bureti": ["Bureti", "Cheplanget", "Kipchorian", "Kaplelartet"],
+            "Kipkelion East": ["Kipkelion East", "Kipkelion West", "Kedowa/Kimugul", "Sigowet/Soin"],
+            "Kipkelion West": ["Kipkelion West", "Kipkelion East", "Soin", "Sigowet"],
+            "Soin": ["Soin", "Sigowet", "Kipkelion East", "Kipkelion West"]
+          },
+          "Bomet": {
+            "Bomet Central": ["Bomet Central", "Longisa", "Siongiroi", "Chebilat", "Tenwek"],
+            "Bomet East": ["Bomet East", "Makimeny", "Kipreres", "Mogogosiek", "Silibwet"],
+            "Chepalungu": ["Chepalungu", "Kong'asis", "Kapseting", "Kimaeti", "Segelio"],
+            "Sotik": ["Sotik", "Kapsuser", "Kapkatet", "Kipsonoi", "Kabobo"],
+            "Konoin": ["Konoin", "Chemaner", "Kaplelach", "Kembu", "Tembelio"]
+          },
+          "Kakamega": {
+            "Lurambi": ["Sheer", "Likhomani", "Shirere", "Butsotso South", "Muranda"],
+            "Navakholo": ["Mukhonje", "Navakholo", "Shinyalu", "Butsotso North", "Butsotso Central"],
+            "Malava": ["Malava", "Chevaywa", "Kamukuywa", "Seng'Oni", "West Wanga", "Mukhonje"],
+            "Lugari": ["Chekalini", "Chekalini East", "Mukhonje", "Butali", "Chekalini West"],
+            "Likuyani": ["Chekalini", "Chekalini East", "Butsotso North", "Butsotso Central"],
+            "Mumias West": ["Butula", "Butula Central", "Butula East", "Matayos West", "Butula South"],
+            "Mumias East": ["Mumias Town", "Shamakhokho", "Ekahawa", "Mahiakalo", "Butula East"],
+            "Matungu": ["Kokuyo", "Kaimosi", "Kakurume", "Kimilili", "Mahiakalo"],
+            "Butere": ["Butere", "Butere Central", "Butere North", "Butere South"],
+            "Khwisero": ["Khwisero", "Khwisero Central", "Khwisero East", "Khwisero West"],
+            "Shinyalu": ["Shinyalu", "Shinyalu West", "Shinyalu East", "Shinyalu Central", "Shinyalu South"],
+            "Ikolomani": ["Ikolomani", "Ikolomani East", "Ikolomani West", "Ikolomani Central"]
+          },
+          "Vihiga": {
+            "Vihiga": ["Vihiga", "Hamisi", "Luanda", "Sabatia", "Emuhaya"],
+            "Hamisi": ["Hamisi", "Mungoma", "Marenyo/Shianda", "Bunyore", "Busali"],
+            "Luanda": ["Luanda", "Wemilabi", "Emanyinya", "Eshianda", "Mung'Ang'A"],
+            "Sabatia": ["Sabatia", "Lugari", "Musa", "East Bunyore", "West Bunyore"],
+            "Emuhaya": ["Emuhaya", "North Maragoli", "South Maragoli", "Central Maragoli", "West Maragoli"]
+          },
+          "Bungoma": {
+            "Bungoma East": ["Bungoma East", "Kibingei", "Khalaba", "Webuye", "Marakaru"],
+            "Bungoma West": ["Bungoma West", "Namwela", "Sirisia", "Khasoko", "Khaparas"],
+            "Bumula": ["Bumula", "Kabula", "Kimaeti", "Kibwayen", "Naitiri"],
+            "Kimilili": ["Kimilili", "Kibingei", "Khalaba", "Webuye", "Marakaru"],
+            "Mt. Elgon": ["Mt. Elgon", "Kopsiro", "Kaptama", "Kapkateny", "Kapsokwony"],
+            "Sirisia": ["Sirisia", "Khasoko", "Namwela", "Bungoma West", "Khaparas"],
+            "Tongaren": ["Tongaren", "Ndivisi", "Khapras", "Kopsiro", "Kaptama"]
+          },
+          "Busia": {
+            "Teso North": ["Ang'Urai North", "Ang'Urai South", "Amukura East", "Amukura West", "Amukura Central"],
+            "Teso South": ["Ang'Urai South", "Amukura Central", "Ang'Urai North", "Malaba"],
+            "Nambale": ["Nambale", "Akamai", "Achenga", "Amukura Central", "Amukura East"],
+            "Matayos": ["Matayos South", "Maloba", "Mulwanda", "Nambale"],
+            "Butula": ["Marachi West", "Marachi North", "Marachi Central", "Butula South", "Mulwanda"],
+            "Funyula": ["Funyula Town", "Bukhayo West", "Bukhayo Central", "Bukhayo East", "Nambale"],
+            "Bunyala": ["Bukhayo West", "Bukhayo Central", "Bukhayo East", "Nambale"]
+          },
+          "Siaya": {
+            "Ugenya": ["Ugenya Town", "Uriri", "Mbita", "Nyakach"],
+            "Ugunja": ["Ugunja Town", "Uriri", "Mbita", "Nyakach"],
+            "Alego Usonga": ["Ugunja Town", "Uriri", "Mbita", "Nyakach"],
+            "Gem": ["Ugunja Town", "Uriri", "Mbita", "Nyakach"],
+            "Bondo": ["Ugunja Town", "Uriri", "Mbita", "Nyakach"],
+            "Rarieda": ["Ugunja Town", "Uriri", "Mbita", "Nyakach"]
+          },
+          "Kisumu": {
+    "Kisumu West": ["Kisumu Town", "Mbita", "Nyatike", "Homa Bay"],
+    "Kisumu East": ["Kisumu Town", "Mbita", "Nyatike", "Homa Bay"],
+    "Kisumu Central": ["Kisumu Town", "Mbita", "Nyatike", "Homa Bay"],
+    "Seme": ["Kisumu Town", "Mbita", "Nyatike", "Homa Bay"],
+    "Nyando": ["Kisumu Town", "Mbita", "Nyatike", "Homa Bay"],
+    "Muhoroni": ["Kisumu Town", "Mbita", "Nyatike", "Homa Bay"],
+    "Nyakach": ["Kisumu Town", "Mbita", "Nyatike", "Homa Bay"]
+  },
+  "Homa Bay": {
+    "Ndhiwa": ["Mbita", "Ndhiwa Town", "Uriri", "Kabondo Kasipul"],
+    "Kabondo Kasipul": ["Ndhiwa Town", "Mbita", "Uriri", "Homa Bay"],
+    "Kasipul": ["Mbita", "Ndhiwa Town", "Uriri", "Rangwe"],
+    "Karachuonyo": ["Ndhiwa Town", "Mbita", "Uriri", "Homa Bay"],
+    "Homa Bay Town": ["Ndhiwa Town", "Mbita", "Uriri", "Rangwe"],
+    "Rangwe": ["Ndhiwa Town", "Mbita", "Uriri", "Homa Bay"],
+    "Suba North": ["Ndhiwa Town", "Mbita", "Uriri", "Rangwe"],
+    "Suba South": ["Ndhiwa Town", "Mbita", "Uriri", "Homa Bay"]
+  },
+  "Migori": {
+    "Awendo": ["Awendo Town", "Kanyamkago", "Kamagambo", "Uriri"],
+    "Kuria East": ["Kuria East", "Kamagambo", "Awendo Town", "Nyatike"],
+    "Kuria West": ["Awendo Town", "Nyatike", "Uriri", "Migori"],
+    "Nyatike": ["Nyatike", "Awendo Town", "Kuria East", "Kuria West"],
+    "Rongo": ["Awendo Town", "Uriri", "Migori", "Kanyamkago"],
+    "Sun": ["Nyatike", "Awendo Town", "Kuria East", "Kuria West"]
+  },
+  "Kericho": {
+    "Ainamoi": ["Kipkelion East", "Kipkelion West", "Ainamoi"],
+    "Belgut": ["Belgut", "Kabianga", "Chepsonoi", "Kapkatet"],
+    "Bureti": ["Bureti", "Cheplanget", "Kipchorian", "Kaplelartet"],
+    "Kipkelion East": ["Kipkelion East", "Kipkelion West", "Kedowa/Kimugul", "Sigowet/Soin"],
+    "Kipkelion West": ["Kipkelion West", "Kipkelion East", "Soin", "Sigowet"],
+    "Soin": ["Soin", "Sigowet", "Kipkelion East", "Kipkelion West"]
+  },
+  "Bomet": {
+    "Bomet Central": ["Bomet Central", "Longisa", "Siongiroi", "Chebilat", "Tenwek"],
+    "Bomet East": ["Bomet East", "Makimeny", "Kipreres", "Mogogosiek", "Silibwet"],
+    "Chepalungu": ["Chepalungu", "Kong'asis", "Kapseting", "Kimaeti", "Segelio"],
+    "Sotik": ["Sotik", "Kapsuser", "Kapkatet", "Kipsonoi", "Kabobo"],
+    "Konoin": ["Konoin", "Chemaner", "Kaplelach", "Kembu", "Tembelio"]
+  },
+  "Vihiga": {
+    "Vihiga": ["Vihiga Town", "Vihiga North", "Vihiga South", "Vihiga East"],
+    "Sabatia": ["Sabatia", "Sabatia North", "Sabatia South", "Sabatia East", "Sabatia West"],
+    "Hamisi": ["Hamisi", "Hamisi North", "Hamisi South", "Hamisi East", "Hamisi West"],
+    "Luanda": ["Luanda Town", "Emuhaya", "East Bunyore", "West Bunyore", "South Bunyore"],
+    "Emuhaya": ["Central Bunyore", "East Bunyore", "North Bunyore", "South Bunyore"]
+  },
+  "Bungoma": {
+    "Bungoma North": ["Kimilili", "Naitiri", "Tongaren", "Kabula", "Chwele"],
+    "Kimilili": ["Kimilili Town", "Kimilili North", "Kimilili South", "Kimilili East", "Kimilili West"],
+    "Mt. Elgon": ["Mt. Elgon", "Mt. Elgon East", "Mt. Elgon West", "Mt. Elgon North", "Mt. Elgon South"],
+    "Sirisia": ["Sirisia", "Lwandanyi", "Namwela", "Malakisi/South Kulisiru", "Cheptais"],
+    "Kabuchai": ["Kabuchai", "Kabuchai North", "Kabuchai South", "Kabuchai East", "Kabuchai West"],
+    "Kanduyi": ["Kanduyi", "Kanduyi North", "Kanduyi South", "Kanduyi East", "Kanduyi West"],
+    "Webuye East": ["Webuye", "Webuye North", "Webuye South", "Webuye East", "Webuye West"],
+    "Webuye West": ["Webuye Town", "Webuye Central", "Webuye East", "Webuye West", "Webuye South"]
+  },
+  "Busia": {
+    "Teso North": ["Ang'Urai North", "Ang'Urai South", "Amukura East", "Amukura West", "Amukura Central"],
+    "Teso South": ["Ang'Urai South", "Amukura Central", "Ang'Urai North", "Malaba"],
+    "Nambale": ["Nambale", "Akamai", "Achenga", "Amukura Central", "Amukura East"],
+    "Matayos": ["Matayos South", "Maloba", "Mulwanda", "Nambale"],
+    "Butula": ["Marachi West", "Marachi North", "Marachi Central", "Butula South", "Mulwanda"],
+    "Funyula": ["Funyula Town", "Bukhayo West", "Bukhayo Central", "Bukhayo East", "Nambale"],
+    "Bunyala": ["Bukhayo West", "Bukhayo Central", "Bukhayo East", "Nambale"]
+  }
+};
+
+// Function to handle form submission
+async function submitLocationForm(event) {
+  event.preventDefault();
+  alert("Form submitted!");
+  return false; // prevent page reload
+}
+
+// Function to update subcounties based on selected county
+function updateSubcounties() {
+  const countySelect = document.getElementById("county");
+  const subcountySelect = document.getElementById("subcounty");
+  const selectedCounty = countySelect.value;
+
+  // Clear existing options
+  subcountySelect.innerHTML = '<option value="">Select Subcounty</option>';
+
+  if (selectedCounty && locationData[selectedCounty]) {
+    // Populate subcounties
+    for (const subcounty of Object.keys(locationData[selectedCounty])) {
+      const option = document.createElement("option");
+      option.value = subcounty;
+      option.textContent = subcounty;
+      subcountySelect.appendChild(option);
+    }
+  }
+}
+</script>
+<script>
+    async function submitLocationForm(event) {
+      event.preventDefault(); // Prevents page reload
+      const county = document.getElementById("county").value;
+      const subcounty = document.getElementById("subcounty").value;
+      const constituency = document.getElementById("constituency").value;
+      const season = document.getElementById("season").value;
+      const soilColor = document.getElementById("soilcolor").value;
+  
+      try {
+        const response = await fetch("https://your-backend-api.com/recommend", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(data)
+        });
+  
+        if (!response.ok) throw new Error("Failed to fetch recommendations");
+  
+        const result = await response.json();
+        renderRecommendations(result);
+      } catch (error) {
+        document.getElementById("locationError").textContent = error.message;
+      }
+    }
+  </script>
+  <script>
+    function populateCounties() {
+      const select = document.getElementById("county");
+      const countiesList = Object.keys(counties);
+      countiesList.forEach(c => {
+        const option = document.createElement("option");
+        option.value = c;
+        option.textContent = c;
+        select.appendChild(option);
+      });
+    }
+    
+    function updateSubcounties(){
+      const county = document.getElementById("county").value;
+      const subs = counties[county] 
+                    ? Object.keys(counties[county]) 
+                    : [];
+      let opts = `<option value="">--Select Subcounty--</option>`;
+      subs.forEach(s => opts += `<option value="${s}">${s}</option>`);
+      document.getElementById("subcounty").innerHTML = opts;
+      updateConstituencies();
+    }
+    
+    function updateConstituencies(){
+      const county = document.getElementById("county").value;
+      const sub = document.getElementById("subcounty").value;
+      const consts = counties[county] && counties[county][sub] 
+                     ? counties[county][sub] 
+                     : [];
+      let opts = `<option value="">--Select Constituency--</option>`;
+      consts.forEach(c => opts += `<option value="${c}">${c}</option>`);
+      document.getElementById("constituency").innerHTML = opts;
+    }
+    
+    window.onload = populateCounties;
+    </script>
+    <script>
+      async function submitLocationForm(event) {
+        event.preventDefault();
+      
+        const county = document.getElementById("county").value;
+        const subcounty = document.getElementById("subcounty").value;
+        const constituency = document.getElementById("constituency").value;
+        const season = document.getElementById("season").value;
+        const soilcolor = document.getElementById("soilcolor").value;
+      
+        const payload = {
+          county,
+          subcounty,
+          constituency,
+          season,
+          soilcolor
+        };
+      
+        try {
+          const response = await fetch("http://localhost:5000/recommend", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+          });
+      
+          const data = await response.json();
+      
+          if (data.success && data.recommendations) {
+            renderRecommendations(data.recommendations);
+          } else {
+            document.getElementById("locationError").textContent = data.message || "No recommendations found.";
+          }
+        } catch (error) {
+          console.error("Recommendation fetch failed:", error);
+          document.getElementById("locationError").textContent = "An error occurred. Please try again.";
+        }
+      }
+      
+      function renderRecommendations(crops) {
+        const container = document.getElementById("cropResults");
+        container.innerHTML = "";
+        crops.forEach(crop => {
+          const card = `
+            <div class="bg-white rounded shadow p-4">
+              <img src="${crop.image}" alt="${crop.name}" class="mb-2 w-full h-32 object-cover rounded">
+              <h3 class="text-lg font-bold text-green-800">${crop.name}</h3>
+              <p class="text-sm text-gray-700">Suitability: ${crop.suitability}</p>
+              <p class="text-sm text-gray-500">Confidence: ${crop.probability}</p>
+            </div>
+          `;
+          container.innerHTML += card;
+        });
+      }
+      </script>
+      
+</body>
+</html>
